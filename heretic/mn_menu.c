@@ -38,6 +38,7 @@ typedef enum
 	MENU_FILES,
 	MENU_LOAD,
 	MENU_SAVE,
+	MENU_OPTIONS3,
 	MENU_NONE
 } MenuType_t;
 
@@ -93,6 +94,8 @@ static void DrawEpisodeMenu(void);
 static void DrawSkillMenu(void);
 static void DrawOptionsMenu(void);
 static void DrawOptions2Menu(void);
+static void DrawOptions3Menu(void);
+static APPVER_MENUITEM_RETTYPE SCFastOption(int option);
 static void DrawFileSlots(Menu_t *menu);
 static void DrawFilesMenu(void);
 static void MN_DrawInfo(void);
@@ -259,14 +262,15 @@ static MenuItem_t OptionsItems[] =
 	{ ITT_EFUNC, "MESSAGES : ", SCMessages, 0, MENU_NONE },
 	{ ITT_LRFUNC, "MOUSE SENSITIVITY", SCMouseSensi, 0, MENU_NONE },
 	{ ITT_EMPTY, NULL, NULL, 0, MENU_NONE },
-	{ ITT_SETMENU, "MORE...", NULL, 0, MENU_OPTIONS2 }
+	{ ITT_SETMENU, "MORE...", NULL, 0, MENU_OPTIONS2 },
+	{ ITT_SETMENU, "FASTHERETIC...", NULL, 0, MENU_OPTIONS3 }
 };
 
 static Menu_t OptionsMenu =
 {
 	88, 30,
 	DrawOptionsMenu,
-	5, OptionsItems,
+	6, OptionsItems,
 	0,
 	MENU_MAIN
 };
@@ -290,6 +294,24 @@ static Menu_t Options2Menu =
 	MENU_OPTIONS
 };
 
+static MenuItem_t Options3Items[] =
+{
+	{ ITT_EFUNC, "DETAIL :", SCFastOption, 0, MENU_NONE },
+	{ ITT_EFUNC, "FLOORS :", SCFastOption, 1, MENU_NONE },
+	{ ITT_EFUNC, "SKY :", SCFastOption, 2, MENU_NONE },
+	{ ITT_EFUNC, "GHOSTS :", SCFastOption, 3, MENU_NONE },
+	{ ITT_EFUNC, "FPS :", SCFastOption, 4, MENU_NONE }
+};
+
+static Menu_t Options3Menu =
+{
+	64, 40,
+	DrawOptions3Menu,
+	5, Options3Items,
+	0,
+	MENU_OPTIONS
+};
+
 static Menu_t *Menus[] =
 {
 	&MainMenu,
@@ -299,7 +321,8 @@ static Menu_t *Menus[] =
 	&Options2Menu,
 	&FilesMenu,
 	&LoadMenu,
-	&SaveMenu
+	&SaveMenu,
+	&Options3Menu
 };
 
 //---------------------------------------------------------------------------
@@ -823,6 +846,57 @@ static APPVER_MENUITEM_RETTYPE SCEndGame(int option)
 
 //---------------------------------------------------------------------------
 //
+// FastHeretic options page
+//
+//---------------------------------------------------------------------------
+
+static char *DetailNames[] = { "HIGH", "LOW", "POTATO" };
+
+static void DrawOptions3Menu(void)
+{
+	MN_DrTextB(DetailNames[fh_detail], 180, 40);
+	MN_DrTextB(fh_flatsurfaces ? "FLAT" : "TEXTURED", 180, 60);
+	MN_DrTextB(fh_flatsky ? "FLAT" : "NORMAL", 180, 80);
+	MN_DrTextB(fh_notrans ? "SOLID" : "SEE-THRU", 180, 100);
+	MN_DrTextB(fh_showfps ? "ON" : "OFF", 180, 120);
+	MN_DrTextA("FASTHERETIC V" FH_VERSION " BY LFTECH", 64, 150);
+}
+
+void FH_CycleDetail(void)
+{
+	fh_detail = (fh_detail + 1) % 3;
+	R_SetViewSize(screenblocks, fh_detail);
+}
+
+static APPVER_MENUITEM_RETTYPE SCFastOption(int option)
+{
+	switch(option)
+	{
+		case 0:
+			FH_CycleDetail();
+			break;
+		case 1:
+			fh_flatsurfaces ^= 1;
+			R_FH_SetDrawers();
+			break;
+		case 2:
+			fh_flatsky ^= 1;
+			R_FH_SetDrawers();
+			break;
+		case 3:
+			fh_notrans ^= 1;
+			R_FH_SetDrawers();
+			break;
+		case 4:
+			fh_showfps ^= 1;
+			break;
+	}
+	S_StartSound(NULL, sfx_chat);
+	APPVER_MENUITEM_RET(true)
+}
+
+//---------------------------------------------------------------------------
+//
 // PROC SCMessages
 //
 //---------------------------------------------------------------------------
@@ -1294,7 +1368,12 @@ boolean MN_Responder(event_t *event)
 				S_StartSound(NULL, sfx_dorcls);
 				slottextloaded = false; //reload the slot text, when needed
 				return true;
-			case KEY_F5: // F5 isn't used in Heretic. (detail level)
+			case KEY_F5: // FastHeretic: cycle detail level
+				FH_CycleDetail();
+				P_SetMessage(&players[consoleplayer],
+					fh_detail == 0 ? "HIGH DETAIL" :
+					fh_detail == 1 ? "LOW DETAIL" : "POTATO DETAIL", true);
+				S_StartSound(NULL, sfx_chat);
 				return true;
 			case KEY_F6: // quicksave
 				if(gamestate == GS_LEVEL && !demoplayback)
@@ -1748,4 +1827,18 @@ static void DrawSlider(Menu_t *menu, int item, int width, int slot)
 	}
 	V_DrawPatch(x2, y, W_CacheLumpName("M_SLDRT", PU_CACHE));
 	V_DrawPatch(x+4+slot*8, y+7, W_CacheLumpName("M_SLDKB", PU_CACHE));
+}
+
+//---------------------------------------------------------------------------
+//
+// PROC MN_FHShowMenu
+//
+// FastHeretic: open a menu page directly (used by -fhmenu for screenshots)
+//
+//---------------------------------------------------------------------------
+
+void MN_FHShowMenu(int which)
+{
+	MN_ActivateMenu();
+	SetMenu(which == 1 ? MENU_OPTIONS : MENU_OPTIONS3);
 }

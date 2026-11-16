@@ -15,6 +15,7 @@
 
 #include "doomdef.h"
 #include "soundst.h"
+#include "r_fh.h"
 
 int myargc;
 char **myargv;
@@ -479,6 +480,13 @@ default_t defaults[] =
 	{ "joyb_speed", &joybspeed, 2 },
 
 	{ "screenblocks", &screenblocks, 10 },
+
+	// FastHeretic options (ignored by the original HERETIC.EXE)
+	{ "fh_detail", &fh_detail, 0 },
+	{ "fh_flatsurfaces", &fh_flatsurfaces, 0 },
+	{ "fh_flatsky", &fh_flatsky, 0 },
+	{ "fh_notrans", &fh_notrans, 0 },
+	{ "fh_showfps", &fh_showfps, 0 },
 
 #ifndef __NeXT__
 	{ "snd_channels", &snd_Channels, 3 },

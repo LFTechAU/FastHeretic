@@ -20,6 +20,7 @@
 #include "doomdef.h"
 #include "p_local.h"
 #include "soundst.h"
+#include "r_local.h"
 
 #if (APPVER_HERETICREV < AV_HR_TIC12)
 boolean shareware;		// true if only episode 1 present
@@ -162,6 +163,43 @@ void R_ExecuteSetViewSize(void);
 
 extern boolean finalestage;
 
+//---------------------------------------------------------------------------
+//
+// FastHeretic: frame rate counter and benchmark screenshots
+//
+//---------------------------------------------------------------------------
+
+static int fps_frames;
+static int fps_lasttic;
+static int fps_value;
+static int fh_shottic = -1;
+static int fh_shotmenu = 0;
+extern void MN_FHShowMenu(int which);
+
+extern void MN_DrTextA(char *text, int x, int y);
+extern void M_ScreenShot(void);
+extern int ticcount;
+
+static void FH_DrawFPS(void)
+{
+	char text[8];
+	int tics;
+
+	fps_frames++;
+	tics = ticcount - fps_lasttic;
+	if (tics >= 35)
+	{
+		fps_value = fps_frames * 35 / tics;
+		fps_frames = 0;
+		fps_lasttic = ticcount;
+	}
+	if (fh_showfps)
+	{
+		sprintf(text, "%d", fps_value);
+		MN_DrTextA(text, viewwindowx + scaledviewwidth - 20, viewwindowy + 2);
+	}
+}
+
 void D_Display(void)
 {
 	extern boolean MenuActive;
@@ -185,6 +223,7 @@ void D_Display(void)
 			AM_Drawer ();
 		else
 			R_RenderPlayerView (&players[displayplayer]);
+		FH_DrawFPS();
 		CT_Drawer();
 		UpdateState |= I_FULLVIEW;
 		SB_Drawer();
@@ -215,6 +254,16 @@ void D_Display(void)
 	}
 	// Handle player messages
 	DrawMessage();
+
+	if (fh_shottic >= 0 && gametic == fh_shottic && gamestate == GS_LEVEL)
+	{
+		if (fh_shotmenu)
+			MN_FHShowMenu(fh_shotmenu);
+		MN_Drawer();
+		M_ScreenShot ();
+		players[consoleplayer].message = NULL;
+		fh_shottic = -1;
+	}
 
 	// Menu drawing
 	MN_Drawer();
@@ -1018,6 +1067,22 @@ void D_DoomMain(void)
 	// Load defaults before initing other systems
 	printf("M_LoadDefaults: Load system defaults.\n");
 	M_LoadDefaults();
+
+	// FastHeretic command line options (override HERETIC.CFG)
+	if (M_CheckParm("-high")) fh_detail = 0;
+	if (M_CheckParm("-low")) fh_detail = 1;
+	if (M_CheckParm("-potato")) fh_detail = 2;
+	if (fh_detail < 0 || fh_detail > 2) fh_detail = 0;
+	if (M_CheckParm("-flatsurfaces")) fh_flatsurfaces = 1;
+	if (M_CheckParm("-flatsky")) fh_flatsky = 1;
+	if (M_CheckParm("-notrans")) fh_notrans = 1;
+	if (M_CheckParm("-fps")) fh_showfps = 1;
+	p = M_CheckParm("-fhshot");
+	if (p && p < myargc-1)
+		fh_shottic = atoi(myargv[p+1]);
+	p = M_CheckParm("-fhmenu");
+	if (p && p < myargc-1)
+		fh_shotmenu = atoi(myargv[p+1]);
 
 	printf("Z_Init: Init zone memory allocation daemon.\n");
 	Z_Init();

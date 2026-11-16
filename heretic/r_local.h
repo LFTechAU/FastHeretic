@@ -464,5 +464,7 @@ void 	R_DrawSpanLow (void);
 void 	R_InitBuffer (int width, int height);
 void	R_InitTranslationTables (void);
 
+#include "r_fh.h"
+
 #endif		// __R_LOCAL__
 

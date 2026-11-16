@@ -133,10 +133,13 @@ void R_MapPlane (int y, int x1, int x2)
 		ds_ystep = cachedystep[y];
 	}
 	
-	length = FixedMul (distance,distscale[x1]);
-	angle = (viewangle + xtoviewangle[x1])>>ANGLETOFINESHIFT;
-	ds_xfrac = viewx + FixedMul(finecosine[angle], length);
-	ds_yfrac = -viewy - FixedMul(finesine[angle], length);
+	if (!fh_flatsurfaces)
+	{
+		length = FixedMul (distance,distscale[x1]);
+		angle = (viewangle + xtoviewangle[x1])>>ANGLETOFINESHIFT;
+		ds_xfrac = viewx + FixedMul(finecosine[angle], length);
+		ds_yfrac = -viewy - FixedMul(finesine[angle], length);
+	}
 
 	if (fixedcolormap)
 		ds_colormap = fixedcolormap;
@@ -355,6 +358,8 @@ void R_MakeSpans (int x, int t1, int b1, int t2, int b2)
 ================
 */
 
+static int lastskytexture = -1;
+
 void R_DrawPlanes (void)
 {
 	visplane_t	*pl;
@@ -388,6 +393,11 @@ extern int columnofs[MAXWIDTH];
 	//
 		if (pl->picnum == skyflatnum)
 		{
+			if (fh_flatsky && skytexture != lastskytexture)
+			{
+				lastskytexture = skytexture;
+				R_ComputeSkyColor ();
+			}
 			dc_iscale = skyiscale;
 			dc_colormap = colormaps;// sky is allways drawn full bright
 			dc_texturemid = skytexturemid;
@@ -399,29 +409,9 @@ extern int columnofs[MAXWIDTH];
 				{
 					angle = (viewangle + xtoviewangle[x])>>ANGLETOSKYSHIFT;
 					dc_x = x;
-					dc_source = R_GetColumn(skytexture, angle);
-
-					count = dc_yh - dc_yl;
-					if (count < 0)
-						return;
-				
-#ifdef RANGECHECK
-	if ((unsigned)dc_x >= SCREENWIDTH || dc_yl < 0 || dc_yh >= SCREENHEIGHT)
-		I_Error ("R_DrawColumn: %i to %i at %i", dc_yl, dc_yh, dc_x);
-#endif
-
-					dest = ylookup[dc_yl] + columnofs[dc_x]; 
-	
-					fracstep = 1;
-					frac = (dc_texturemid>>FRACBITS) + (dc_yl-centery);		
-					do
-					{
-						*dest = dc_source[frac];
-						dest += SCREENWIDTH;
-						frac += fracstep;
-					} while (count--);
-	
-//					colfunc ();
+					if (!fh_flatsky)
+						dc_source = R_GetColumn(skytexture, angle);
+					skycolfunc ();
 				}
 			}
 			continue;
@@ -430,6 +420,12 @@ extern int columnofs[MAXWIDTH];
 	//
 	// regular flat
 	//
+		if (fh_flatsurfaces)
+		{
+			ds_flatcolor = R_FlatColor(flattranslation[pl->picnum]);
+			tempSource = NULL;
+		}
+		else
 		tempSource = W_CacheLumpNum(firstflat +
 			flattranslation[pl->picnum], PU_STATIC);
 
@@ -471,6 +467,7 @@ extern int columnofs[MAXWIDTH];
 			R_MakeSpans (x,pl->top[x-1],pl->bottom[x-1]
 			,pl->top[x],pl->bottom[x]);
 		
-		Z_ChangeTag (tempSource, PU_CACHE);
+		if (tempSource)
+			Z_ChangeTag (tempSource, PU_CACHE);
 	}
 }

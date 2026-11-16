@@ -66,6 +66,7 @@ void		(*colfunc) (void);
 void		(*basecolfunc) (void);
 void		(*fuzzcolfunc) (void);
 void		(*transcolfunc) (void);
+void		(*transfuzzcolfunc) (void);
 void		(*spanfunc) (void);
 
 /*
@@ -549,7 +550,7 @@ void R_SetViewSize (int blocks, int detail)
 {
 	setsizeneeded = true;
 	setblocks = blocks;
-	setdetail = detail;
+	setdetail = fh_detail; // FastHeretic: detail comes from F5 / config
 }
 
 /*
@@ -587,20 +588,7 @@ void R_ExecuteSetViewSize (void)
 	centeryfrac = centery<<FRACBITS;
 	projection = centerxfrac;
 
-	if (!detailshift)
-	{
-		colfunc = basecolfunc = R_DrawColumn;
-		fuzzcolfunc = R_DrawFuzzColumn;
-		transcolfunc = R_DrawTranslatedColumn;
-		spanfunc = R_DrawSpan;
-	}
-	else
-	{
-		colfunc = basecolfunc = R_DrawColumnLow;
-		fuzzcolfunc = R_DrawFuzzColumn;
-		transcolfunc = R_DrawTranslatedColumn;
-		spanfunc = R_DrawSpanLow;
-	}
+	R_FH_SetDrawers ();
 
 	R_InitBuffer (scaledviewwidth, viewheight);
 
