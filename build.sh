@@ -2,7 +2,7 @@
 # FastHeretic build script (OpenWatcom 2 on Linux)
 # Usage: ./build.sh [cpu] [mode]
 #   cpu  = 386 (default) | 486 | 586 | stock
-#   mode = y (default, Mode Y straight to video memory) | 13h | yh (half height)
+#   mode = y (default, Mode Y straight to video memory) | 13h | yh (half height) | vbr vbd (VESA)
 #          | cga bwc c16 512 cah cvb ega hgc inc pcp 400 (FastDoom modes)
 #          | t1 t12 t25 t43 t50 mda (text modes)
 # "stock" = plain Heretic v1.3 settings (original compiler flags, DOS/4GW,
@@ -27,6 +27,8 @@ case "$MODE" in
   y)   MODEDEF="-dFH_MODEY"; EXE=fhtic$SUF.exe; EXTRAOBJ="fhasmy" ;;
   13h) MODEDEF=""; EXE=fhtic13h$SUF.exe ;;
   yh)  MODEDEF="-dFH_MODEY -dFH_MODEYH"; EXE=fhtich$SUF.exe; EXTRAOBJ="fhasmy" ;;
+  vbr) MODEDEF="-dFH_VBR"; EXE=fhticvbr$SUF.exe ;;
+  vbd) MODEDEF="-dFH_VBD"; EXE=fhticvbd$SUF.exe ;;
   cga) fdmode MODE_CGA     i_cga4    cga4   cga ;;
   bwc) fdmode MODE_CGA_BW  i_cgabw   cgabw  bwc ;;
   c16) fdmode MODE_CGA16   i_cga16   cga16  c16 ;;
@@ -66,7 +68,7 @@ fi
 HERETIC_C="am_map ct_chat d_main d_net f_finale g_game info in_lude i_cyber i_ibm i_sound \
  mn_menu m_misc p_ceilng p_doors p_enemy p_floor p_inter p_lights p_map p_maputl p_mobj \
  p_plats p_pspr p_setup p_sight p_spec p_switch p_telept p_tick p_user r_bsp r_data r_draw \
- r_main r_plane r_segs r_things sb_bar sounds tables v_video w_wad z_zone i_text r_fhdraw fh_modey fhvideo"
+ r_main r_plane r_segs r_things sb_bar sounds tables v_video w_wad z_zone i_text r_fhdraw fh_modey fhvideo fh_vesa"
 APODMX_C="dmx dpmiapi mus2mid tsmapi usrhooks"
 
 for f in $HERETIC_C; do wcc386 $CCOPTS -fo=$f.obj "$ROOT/heretic/$f.c"; done

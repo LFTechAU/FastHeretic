@@ -998,7 +998,7 @@ void I_Update (void)
 //
 // blit screen to video
 //
-#if !defined(FH_MODEY) && !defined(FH_BACKBUF)
+#if !defined(FH_DIRECT) && !defined(FH_BACKBUF)
 	if(DisplayTicker)
 #else
 	if(0)
@@ -1029,9 +1029,18 @@ void I_Update (void)
 			dest += 2;
 		}
 	}
-#ifdef FH_MODEY
+#ifdef FH_DIRECT
 	FHY_Update();
 	return;
+#endif
+#ifdef FH_VBR
+	if(fhe_pitch != SCREENWIDTH)
+	{ // odd line length: copy everything
+		if(UpdateState != I_NOUPDATE)
+			FHE_CopyRows(pcscreen, screen, 0, SCREENHEIGHT);
+		UpdateState = I_NOUPDATE;
+		return;
+	}
 #endif
 #ifdef FH_BACKBUF
 	FHV_Update();
@@ -1101,8 +1110,11 @@ void I_InitGraphics(void)
 		return;
 	}
 	grmode = true;
-#if defined(FH_MODEY)
+#if defined(FH_DIRECT)
 	FHY_InitGraphics();
+#elif defined(FH_VBR)
+	FHE_Init(1);
+	pcscreen = destscreen = fhe_lfb;
 #elif defined(FH_BACKBUF)
 	FHV_Init();
 #else
@@ -1130,7 +1142,11 @@ void I_ShutdownGraphics(void)
 	return;
 #endif
 
+#if defined(FH_VBR) || defined(FH_VBD)
+	if(grmode)
+#else
 	if(*(byte *)0x449 == 0x13) // don't reset mode if it didn't get set
+#endif
 	{
 		regs.w.ax = 3;
 		int386(0x10, &regs, &regs); // back to text mode
@@ -1383,12 +1399,21 @@ int lastpress;
 ================
 */
 
+int fh_xtkbd;     // -xt: PC/XT keyboard needs a manual acknowledge
+
 void __interrupt I_KeyboardISR (void)
 {
 // Get the scan code
 
 	keyboardque[kbdhead&(KBDQUESIZE-1)] = lastpress = _inbyte(0x60);
 	kbdhead++;
+
+	if (fh_xtkbd)
+	{ // pulse port 61h bit 7 to clear the XT keyboard
+		int t = _inbyte(0x61);
+		_outbyte(0x61, t | 0x80);
+		_outbyte(0x61, t);
+	}
 
 // acknowledge the interrupt
 
@@ -1408,6 +1433,7 @@ void __interrupt I_KeyboardISR (void)
 void I_StartupKeyboard (void)
 {
 #ifndef NOKBD
+	fh_xtkbd = M_CheckParm("-xt");
 	oldkeyboardisr = _dos_getvect(KEYBOARDINT);
 	_dos_setvect (0x8000 | KEYBOARDINT, I_KeyboardISR);
 #endif
@@ -2011,6 +2037,17 @@ byte *I_ZoneBase (int *size)
 	heap = meminfo[0];
 	printf ("DPMI memory: 0x%x, ",heap);
 
+	{ // FastHeretic: -limitram KB caps the zone, -freeram KB leaves memory free
+		int maxheap = 0x800000;
+		i = M_CheckParm("-limitram");
+		if (i && i < myargc - 1 && atoi(myargv[i + 1]) > 0)
+			maxheap = atoi(myargv[i + 1]) * 1024;
+		i = M_CheckParm("-freeram");
+		if (i && i < myargc - 1)
+			heap -= atoi(myargv[i + 1]) * 1024;
+		if (heap > maxheap)
+			heap = maxheap + 0x10000;
+	}
 	do
 	{
 		heap -= 0x10000;                // leave 64k alone

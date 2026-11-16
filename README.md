@@ -17,6 +17,10 @@ Executables
   FHTIC13H.EXE Mode 13h, built for 386
   FHTICH.EXE   Mode Y at half height (320x100, each line shown twice
                as tall): about a quarter faster again
+  FHTICVBD.EXE VESA 320x200 linear frame buffer, drawn straight into
+               video memory with 3 pages (VESA 2.0 cards, or UNIVBE)
+  FHTICVBR.EXE VESA 320x200, copied from system memory each frame
+               (-noLFB to use the 64 KB window instead of linear)
 
 Other video cards (all built for 386, from FastDoom's video code):
 
@@ -83,11 +87,21 @@ Options > FASTHERETIC... in the game menu, or on the command line:
   -csv                     add -timedemo results to FHBENCH.CSV
   -fixDAC                  wait for retrace before palette changes (old
                            VGA cards that show snow); vanilla always did
+  -debugCard2 / -debugCard4  show the frame rate on a POST code card
+  -debugPort hex           POST card port (default 80)
+  -limitram KB             use at most this much memory for the game
+  -freeram KB              leave this much memory free (for TSRs)
+  -xt                      keyboard fix for PC/XT style keyboard ports
+  -noLFB                   VESA builds: use the 64 KB window, not linear
 
 Settings are saved to HERETIC.CFG (the original HERETIC.EXE ignores them).
 
 Changes
 -------
+
+v0.5  VESA 320x200 builds: FHTICVBD (direct, 3 pages) and FHTICVBR
+      (copied). Both fall back to Mode 13h when there is no VESA mode.
+      FastDoom options -debugCard2/-debugCard4, -limitram, -freeram, -xt.
 
 v0.4  FastDoom's other video modes: EGA, CGA (4 colour, mono, 16 colour,
       ANSI from Hell, composite, 512 colour), Plantronics, Sigma Color

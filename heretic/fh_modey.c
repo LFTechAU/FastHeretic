@@ -14,7 +14,7 @@
 // of the License, or (at your option) any later version.
 //
 
-#ifdef FH_MODEY
+#if defined(FH_MODEY) || defined(FH_VBD)
 
 #include <string.h>
 #include <conio.h>
@@ -68,6 +68,8 @@ int fhy_bc, fhy_sc;
 
 #define READPLANE(p) outp(GC_DATA, (p))
 
+#ifdef FH_MODEY
+
 //==========================================================================
 // Setup
 //==========================================================================
@@ -100,6 +102,11 @@ void FHY_InitGraphics(void)
 	outp(GC_INDEX, 4);                          // leave read map selected
 	my_curmask = 15;
 	borderpages = sbpages = 3;
+}
+
+int FHY_Direct(void)
+{
+	return 1;
 }
 
 // Called whenever the view size or detail changes.
@@ -395,6 +402,60 @@ void R_FHY_SetDrawers(void)
 	skycolfunc = fh_flatsky ? R_DrawSkyFlatY : R_DrawSkyColumnY;
 }
 
+
+#else // FH_VBD: linear frame buffer with 3 pages
+
+#define YH 0
+#define PAGESIZE (SCREENWIDTH * SCREENHEIGHT)
+
+extern byte *fhe_lfb;
+extern int fhe_pitch, fhe_pages, fhe_linear;
+int FHE_Init(int wantpages);
+void FHE_ShowPage(int n, int waitvsync);
+void FHE_CopyRows(byte *dest, byte *src, int y, int h);
+
+static byte *ramscreen;          // the normal screen buffer
+extern byte *ylookup[];
+static int fhd_ok;               // 3 linear pages with 320 byte lines
+
+void FHY_InitGraphics(void)
+{
+	FHE_Init(3);
+	fhd_ok = fhe_linear && fhe_pitch == SCREENWIDTH && fhe_pages >= 3;
+#ifdef FHY_DEBUG
+	printf("VBE: linear %d pitch %d pages %d -> direct %d\n",
+		fhe_linear, fhe_pitch, fhe_pages, fhd_ok);
+#endif
+	pcscreen = fhe_lfb;
+	destscreen = fhd_ok ? fhe_lfb + PAGESIZE : fhe_lfb;
+	if (fhd_ok)
+		memset(fhe_lfb, 0, PAGESIZE * 3);
+	ramscreen = screen;
+	borderpages = sbpages = 3;
+}
+
+void R_FHY_InitTables(void)
+{
+	borderpages = sbpages = 3;
+}
+
+void R_FHY_SetupFrame(void)
+{
+	int i;
+
+	if (!fhd_ok)
+		return;     // no pages: draw into the screen buffer as Mode 13h
+	for (i = 0; i < viewheight; i++)
+		ylookup[i] = destscreen + (viewwindowy + i) * SCREENWIDTH;
+}
+
+int FHY_Direct(void)
+{
+	return fhd_ok;
+}
+
+#endif // FH_MODEY
+
 //==========================================================================
 // Patches drawn straight into the page (menus, messages, fullscreen HUD)
 //==========================================================================
@@ -403,7 +464,11 @@ void R_FHY_SetDrawers(void)
 static int curbox[4] = {SCREENWIDTH, SCREENHEIGHT, 0, 0};
 static int pagebox[3][4];
 
+#ifdef FH_MODEY
 #define PAGENUM(p) (((int)(p) - 0xA0000) / PAGEBYTES)
+#else
+#define PAGENUM(p) (((p) - fhe_lfb) / PAGESIZE)
+#endif
 
 static void FHY_AddBox(int x1, int y1, int x2, int y2)
 {
@@ -413,6 +478,49 @@ static void FHY_AddBox(int x1, int y1, int x2, int y2)
 	if (y1 < curbox[1]) curbox[1] = y1;
 	if (x2 > curbox[2]) curbox[2] = x2;
 	if (y2 > curbox[3]) curbox[3] = y2;
+}
+
+#ifdef FH_VBD
+// V_Draw* draw into `screen`, which points at the page during overlays:
+// just note what lands outside the view
+void FHY_NoteBox(int x, int y, patch_t *patch, int mode)
+{
+	int w, h;
+
+	y -= SHORT(patch->topoffset);
+	x -= SHORT(patch->leftoffset);
+	w = SHORT(patch->width) + (mode == 2 ? 2 : 0);
+	h = SHORT(patch->height) + (mode == 2 ? 2 : 0);
+	if (x < viewwindowx || x + w > viewwindowx + scaledviewwidth
+		|| y < viewwindowy || y + h > viewwindowy + viewheight)
+	{
+		FHY_AddBox(x, y, x + w, y + h);
+	}
+}
+
+// Overlays draw straight into the page
+void FHY_OverlayOn(void)
+{
+	fh_planar = destscreen;
+	screen = destscreen;
+}
+
+void FHY_OverlayOff(void)
+{
+	fh_planar = NULL;
+	screen = ramscreen;
+}
+
+#else
+
+void FHY_OverlayOn(void)
+{
+	fh_planar = destscreen;
+}
+
+void FHY_OverlayOff(void)
+{
+	fh_planar = NULL;
 }
 
 // mode 0 = solid, 1 = translucent, 2 = solid with shadow
@@ -507,9 +615,39 @@ void FHY_DrawPatch(int x, int y, patch_t *patch, int mode)
 	}
 }
 
+#endif // FH_VBD
+
 //==========================================================================
 // Linear screen buffer -> page copies
 //==========================================================================
+
+#ifdef FH_VBD
+
+void FHY_CopyRect(int x, int y, int w, int h)
+{
+	byte *src, *dst;
+
+	if (w <= 0 || h <= 0)
+		return;
+	src = ramscreen + y * SCREENWIDTH + x;
+	dst = destscreen + y * SCREENWIDTH + x;
+	for (; h > 0; h--, src += SCREENWIDTH, dst += SCREENWIDTH)
+		memcpy(dst, src, w);
+}
+
+void FHY_CopyScreen(void)
+{
+	FHE_CopyRows(destscreen, ramscreen, 0, SCREENHEIGHT);
+}
+
+void FHY_ReadPage(void)
+{
+	if (destscreen != ramscreen)
+		memcpy(ramscreen, destscreen, PAGESIZE);
+	borderpages = sbpages = 3;
+}
+
+#else
 
 // Copy a rectangle of `screen` into the page being drawn.
 // x and w are rounded out to multiples of 4.
@@ -580,6 +718,8 @@ void FHY_ReadPage(void)
 	}
 	borderpages = sbpages = 3;
 }
+
+#endif // FH_VBD
 
 // Bring the border and status bar of the page up to date.
 // Called after the view and status bar are drawn, before overlays.
@@ -666,6 +806,17 @@ void FHY_Update(void)
 		UpdateState = I_NOUPDATE;
 		lastdirect = 0;
 	}
+#ifdef FH_VBD
+	if (fhd_ok)
+	{
+		FHE_ShowPage(PAGENUM(destscreen), fh_vsync);
+		destscreen += PAGESIZE;
+		if (destscreen == fhe_lfb + PAGESIZE * 3)
+			destscreen = fhe_lfb;
+	}
+	fh_directframe = 0;
+	return;
+#endif
 #ifdef FHY_DEBUG
 	{ // dump the 60th frame as raw planar-decoded bytes
 		static int frames;
@@ -702,4 +853,4 @@ void FHY_Update(void)
 	fh_directframe = 0;
 }
 
-#endif // FH_MODEY
+#endif // FH_MODEY || FH_VBD

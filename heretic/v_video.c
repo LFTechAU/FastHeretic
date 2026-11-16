@@ -2,7 +2,7 @@
 // V_video.c
 
 #include "doomdef.h"
-#ifdef FH_MODEY
+#if defined(FH_MODEY) || defined(FH_VBD)
 #include "r_local.h"
 #endif
 
@@ -43,12 +43,16 @@ void V_DrawPatch(int x, int y, patch_t *patch)
 	byte *source;
 	int w;
 
-	#ifdef FH_MODEY
+#ifdef FH_MODEY
 	if (fh_planar)
 	{
 		FHY_DrawPatch(x, y, patch, 0);
 		return;
 	}
+#endif
+#ifdef FH_VBD
+	if (fh_planar)
+		FHY_NoteBox(x, y, patch, 0);
 #endif
 	y -= SHORT(patch->topoffset);
 	x -= SHORT(patch->leftoffset);
@@ -97,12 +101,16 @@ void V_DrawFuzzPatch (int x, int y, patch_t *patch)
 	byte		*desttop, *dest, *source;
 	int			w;
 	
-	#ifdef FH_MODEY
+#ifdef FH_MODEY
 	if (fh_planar)
 	{
 		FHY_DrawPatch(x, y, patch, 1);
 		return;
 	}
+#endif
+#ifdef FH_VBD
+	if (fh_planar)
+		FHY_NoteBox(x, y, patch, 1);
 #endif
 	y -= SHORT(patch->topoffset);
 	x -= SHORT(patch->leftoffset);
@@ -155,12 +163,16 @@ void V_DrawShadowedPatch(int x, int y, patch_t *patch)
 	byte		*desttop2, *dest2;
 	int			w;
 	
-	#ifdef FH_MODEY
+#ifdef FH_MODEY
 	if (fh_planar)
 	{
 		FHY_DrawPatch(x, y, patch, 2);
 		return;
 	}
+#endif
+#ifdef FH_VBD
+	if (fh_planar)
+		FHY_NoteBox(x, y, patch, 2);
 #endif
 	y -= SHORT(patch->topoffset);
 	x -= SHORT(patch->leftoffset);

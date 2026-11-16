@@ -4,6 +4,7 @@
 #include "gamever.h" // VERSIONS RESTORATION: Need to include this early
 #ifdef __WATCOMC__
 #include <dos.h>
+#include <conio.h>
 #if (APPVER_HERETICREV >= AV_HR_TIC10S)
 #include "i_text.h"
 #endif
@@ -172,6 +173,8 @@ extern boolean finalestage;
 static int fps_frames;
 static int fps_lasttic;
 static int fps_value;
+static int fh_debugcard;            // -debugCard2 / -debugCard4: FPS on a POST card
+static int fh_debugport = 0x80;
 static int fh_shottic = -1;
 static int fh_shotmenu = 0;
 extern void MN_FHShowMenu(int which);
@@ -193,6 +196,23 @@ static void FH_DrawFPS(void)
 		fps_frames = 0;
 		fps_lasttic = ticcount;
 	}
+	if (fh_debugcard)
+	{ // show the frame rate in BCD on the POST code display
+		int v = fps_value, out;
+		if (fh_debugcard == 2)
+		{
+			if (v > 99) v = 99;
+			out = ((v / 10) << 4) | (v % 10);
+			outp(fh_debugport, out);
+		}
+		else
+		{
+			if (v > 9999) v = 9999;
+			out = ((v / 1000) << 12) | (((v / 100) % 10) << 8)
+				| (((v / 10) % 10) << 4) | (v % 10);
+			outpw(fh_debugport, out);
+		}
+	}
 	if (fh_showfps)
 	{
 		sprintf(text, "%d", fps_value);
@@ -204,7 +224,7 @@ void D_Display(void)
 {
 	extern boolean MenuActive;
 	extern boolean askforquit;
-#ifdef FH_MODEY
+#ifdef FH_DIRECT
 	extern int InfoType;
 	extern int screenblocks;
 #endif
@@ -227,16 +247,16 @@ void D_Display(void)
 			AM_Drawer ();
 		else
 			R_RenderPlayerView (&players[displayplayer]);
-#ifdef FH_MODEY
-		if (!automapactive && !(MenuActive && InfoType))
+#ifdef FH_DIRECT
+		if (!automapactive && !(MenuActive && InfoType) && FHY_Direct())
 		{ // view is in the page already: status bar, border, then overlays
 			fh_directframe = 1;
 			if (screenblocks > 10)
-				fh_planar = destscreen;
+				FHY_OverlayOn();
 			SB_Drawer();
-			fh_planar = NULL;
+			FHY_OverlayOff();
 			FHY_Composite();
-			fh_planar = destscreen;
+			FHY_OverlayOn();
 			FH_DrawFPS();
 			CT_Drawer();
 			break;
@@ -279,7 +299,7 @@ void D_Display(void)
 		if (fh_shotmenu)
 			MN_FHShowMenu(fh_shotmenu);
 		MN_Drawer();
-#ifdef FH_MODEY
+#ifdef FH_DIRECT
 		if (fh_directframe)
 			FHY_ReadPage();
 #endif
@@ -290,8 +310,8 @@ void D_Display(void)
 
 	// Menu drawing
 	MN_Drawer();
-#ifdef FH_MODEY
-	fh_planar = NULL;
+#ifdef FH_DIRECT
+	FHY_OverlayOff();
 #endif
 
 	// Send out any new accumulation
@@ -1111,6 +1131,13 @@ void D_DoomMain(void)
 	if (M_CheckParm("-far")) fh_near = 0;
 	if (M_CheckParm("-vsync")) fh_vsync = 1;
 	if (M_CheckParm("-fixDAC")) fh_fixdac = 1;
+	if (M_CheckParm("-debugCard2")) fh_debugcard = 2;
+	if (M_CheckParm("-debugCard4")) fh_debugcard = 4;
+	{
+		int p = M_CheckParm("-debugPort");
+		if (p && p < myargc - 1)
+			sscanf(myargv[p + 1], "%x", &fh_debugport);
+	}
 	if (M_CheckParm("-novsync")) fh_vsync = 0;
 	if (M_CheckParm("-nofps")) fh_showfps = 0;
 	if (M_CheckParm("-csv")) fh_csv = 1;
