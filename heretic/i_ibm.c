@@ -945,7 +945,14 @@ void I_SetPalette(byte *palette)
 	{
 		return;
 	}
-	I_WaitVBL(1);
+#ifdef FH_BACKBUF
+	FHV_SetPalette(palette);
+	return;
+#endif
+	if(fh_fixdac)
+	{ // FastHeretic: vanilla waits for retrace on every palette change
+		I_WaitVBL(1);
+	}
 	_outbyte(PEL_WRITE_ADR, 0);
 #if (APPVER_HERETICREV < AV_HR_TIC10S)
 	if (altpal)
@@ -991,7 +998,7 @@ void I_Update (void)
 //
 // blit screen to video
 //
-#ifndef FH_MODEY
+#if !defined(FH_MODEY) && !defined(FH_BACKBUF)
 	if(DisplayTicker)
 #else
 	if(0)
@@ -1024,6 +1031,10 @@ void I_Update (void)
 	}
 #ifdef FH_MODEY
 	FHY_Update();
+	return;
+#endif
+#ifdef FH_BACKBUF
+	FHV_Update();
 	return;
 #endif
 	if(UpdateState == I_NOUPDATE)
@@ -1090,8 +1101,10 @@ void I_InitGraphics(void)
 		return;
 	}
 	grmode = true;
-#ifdef FH_MODEY
+#if defined(FH_MODEY)
 	FHY_InitGraphics();
+#elif defined(FH_BACKBUF)
+	FHV_Init();
 #else
 	regs.w.ax = 0x13;
 	int386(0x10, (const union REGS *)&regs, &regs);
@@ -1109,6 +1122,13 @@ void I_InitGraphics(void)
 
 void I_ShutdownGraphics(void)
 {
+#ifdef FH_BACKBUF
+	if(grmode)
+	{
+		FHV_Shutdown();
+	}
+	return;
+#endif
 
 	if(*(byte *)0x449 == 0x13) // don't reset mode if it didn't get set
 	{

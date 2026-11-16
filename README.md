@@ -16,6 +16,31 @@ Executables
   FHTIC5.EXE   Mode Y, built for Pentium
   FHTIC13H.EXE Mode 13h, built for 386
 
+Other video cards (all built for 386, from FastDoom's video code):
+
+  FHTICEGA.EXE EGA 320x200, 16 colours
+  FHTICCGA.EXE CGA 320x200, 4 colours (-palette1 for cyan/magenta)
+  FHTICBWC.EXE CGA 640x200, black and white
+  FHTICC16.EXE CGA 160x100, 16 colours (text mode trick)
+  FHTICCAH.EXE CGA "ANSI from Hell" 320x100, 16 colours
+  FHTICCVB.EXE CGA composite 160x200, 16 colours
+  FHTIC512.EXE CGA composite 80x100, 512 colours (-oldcga for an
+               early IBM CGA)
+  FHTICPCP.EXE Plantronics ColorPlus 320x200, 16 colours
+  FHTIC400.EXE Sigma Color 400 320x200, 16 colours
+  FHTICHGC.EXE Hercules 640x400, black and white
+  FHTICINC.EXE Hercules InColor 320x200, 16 colours
+  FHTICT1.EXE  40x25 text
+  FHTICT12.EXE 40x25 text, 40x50 blocks
+  FHTICT25.EXE 80x25 text, 80x50 blocks
+  FHTICT43.EXE 80x43 text, 80x86 blocks (EGA)
+  FHTICT50.EXE 80x50 text, 80x100 blocks (VGA)
+  FHTICMDA.EXE MDA 80x25 text, shaded blocks
+
+  -snow fixes snow on IBM CGA cards, -cga fixes the text modes on CGA
+  cards. The text modes draw the whole picture first, so add -potato
+  for speed.
+
 Mode Y draws the 3D view straight into video memory and flips between
 3 pages, like vanilla Doom and FastDoom's FDOOM.EXE. Mode 13h draws into
 system memory and copies the view to the card every frame, like
@@ -54,12 +79,18 @@ Options > FASTHERETIC... in the game menu, or on the command line:
   -vsync / -novsync        wait for vertical retrace
   -size N                  screen size 3 to 11
   -csv                     add -timedemo results to FHBENCH.CSV
+  -fixDAC                  wait for retrace before palette changes (old
+                           VGA cards that show snow); vanilla always did
 
 Settings are saved to HERETIC.CFG (the original HERETIC.EXE ignores them).
 
 Changes
 -------
 
+v0.4  FastDoom's other video modes: EGA, CGA (4 colour, mono, 16 colour,
+      ANSI from Hell, composite, 512 colour), Plantronics, Sigma Color
+      400, Hercules, InColor, and text modes 40x25 to 80x50 and MDA.
+      Palette changes no longer wait for vertical retrace (-fixDAC).
 v0.3  Mode Y renderer straight into video memory with 3-page flipping
       (FHTIC.EXE); Mode 13h kept as FHTIC13H.EXE. FastDoom options
       -flatSpan, -flatterSpan, -saturn, -near, -vsync, -size, -csv.

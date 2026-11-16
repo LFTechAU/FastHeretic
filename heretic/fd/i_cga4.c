@@ -1,0 +1,86 @@
+#include <string.h>
+#include <dos.h>
+#include <conio.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdarg.h>
+
+#include "doomtype.h"
+#include "doomstat.h"
+#include "i_ibm.h"
+#include "v_video.h"
+#include "tables.h"
+#include "math.h"
+#include "i_system.h"
+#include "i_gamma.h"
+
+#if defined(MODE_CGA)
+
+byte lut4colors[14 * 256 + 255];
+byte *ptrlut4colors;
+
+const byte colors[12] = {
+    0x00, 0x00, 0x00,
+    0x00, 0x2A, 0x00,
+    0x2A, 0x00, 0x00,
+    0x2A, 0x15, 0x00};
+
+void I_ProcessPalette(byte *palette)
+{
+    int i, j;
+    byte *ptr = gammatable;
+
+    ptrlut4colors = (byte *)(((int)lut4colors + 255) & ~0xff);
+
+    for (i = 0; i < FD_NUMPAL * 256; i++, palette += 3)
+    {
+        unsigned int r1, g1, b1;
+        unsigned int bestcolor;
+
+        r1 = (int)ptr[*(palette)];
+        g1 = (int)ptr[*(palette+1)];
+        b1 = (int)ptr[*(palette+2)];
+
+        bestcolor = GetClosestColor(colors, 4, r1, g1, b1);
+
+        ptrlut4colors[i] = bestcolor;
+    }
+}
+
+void CGA_InitGraphics(void)
+{
+    union REGS regs;
+
+    // Set video mode 4
+    regs.w.ax = 0x04;
+    int386(0x10, (union REGS *)&regs, &regs);
+
+    if (!CGApalette1)
+    {
+        // Set palette and intensity (CGA)
+        outp(0x3D9, 0);
+
+        // Fix EGA/VGA wrong colors
+        regs.w.ax = 0x1000;
+        regs.w.bx = 0x0000;
+        int386(0x10, (union REGS *)&regs, &regs);
+
+        regs.w.ax = 0x1000;
+        regs.w.bx = 0x0201;
+        int386(0x10, (union REGS *)&regs, &regs);
+
+        regs.w.ax = 0x1000;
+        regs.w.bx = 0x0402;
+        int386(0x10, (union REGS *)&regs, &regs);
+
+        regs.w.ax = 0x1000;
+        regs.w.bx = 0x0603;
+        int386(0x10, (union REGS *)&regs, &regs);
+    }
+
+    pcscreen = destscreen = (byte *)0xB8000;
+
+    SetDWords(pcscreen, 0, 4096);
+}
+
+#endif

@@ -21,21 +21,19 @@ jobs:
 
       - name: Build
         run: |
-          for cpu in 386 486 586 stock; do ./build.sh $cpu y; done
-          ./build.sh 386 13h
+          for m in y 13h cga bwc c16 512 cah cvb ega hgc inc pcp 400 t1 t12 t25 t43 t50 mda; do ./build.sh 386 $m; done
+          ./build.sh 486 y
+          ./build.sh 586 y
+          ./build.sh stock
 
       - name: Bind DOS/32A extender
         run: |
-          ./bind.sh build/386-y/fhtic.exe
-          ./bind.sh build/486-y/fhtic4.exe
-          ./bind.sh build/586-y/fhtic5.exe
-          ./bind.sh build/386-13h/fhtic13h.exe
+          for f in build/*/fhtic*.exe; do ./bind.sh $f; done
 
       - name: Collect
         run: |
           mkdir dist
-          cp build/386-y/FHTIC.EXE build/486-y/FHTIC4.EXE build/586-y/FHTIC5.EXE dist/
-          cp build/386-13h/FHTIC13H.EXE dist/
+          cp build/*/FHTIC*.EXE dist/
           cp build/stock-13h/htic13f.exe dist/HTIC13F.EXE
           cp README.md dist/README.TXT
           cp heretic/license.txt dist/LICENSE.TXT

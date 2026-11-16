@@ -24,7 +24,9 @@ int fh_notrans;          // 1 = translucent sprites drawn solid
 int fh_showfps;          // 1 = frame rate counter
 int fh_near;             // 1 = cull distant non-monster sprites
 int fh_vsync;            // 1 = wait for retrace before blits
-int fh_csv;              // 1 = append timedemo results to FHBENCH.CSV
+int fh_csv;
+int fh_fixdac;           // wait for retrace before palette changes
+             // 1 = append timedemo results to FHBENCH.CSV
 
 byte skyflatcolor;
 

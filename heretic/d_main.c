@@ -1110,6 +1110,7 @@ void D_DoomMain(void)
 	if (M_CheckParm("-near")) fh_near = 1;
 	if (M_CheckParm("-far")) fh_near = 0;
 	if (M_CheckParm("-vsync")) fh_vsync = 1;
+	if (M_CheckParm("-fixDAC")) fh_fixdac = 1;
 	if (M_CheckParm("-novsync")) fh_vsync = 0;
 	if (M_CheckParm("-nofps")) fh_showfps = 0;
 	if (M_CheckParm("-csv")) fh_csv = 1;

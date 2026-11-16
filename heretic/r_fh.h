@@ -10,6 +10,7 @@ extern int fh_showfps;       // frame rate counter
 extern int fh_near;          // only draw nearby non-monster sprites
 extern int fh_vsync;         // wait for vertical retrace before blits
 extern int fh_csv;           // append timedemo results to FHBENCH.CSV
+extern int fh_fixdac;        // wait for retrace before palette changes (-fixDAC)
 
 extern void (*skycolfunc)(void);
 extern void (*transcolfunc)(void);
@@ -22,6 +23,14 @@ byte R_FlatColor(int flatnum);
 void R_ComputeSkyColor(void);
 
 void R_DrawSpanFlat(void);
+
+#ifdef FH_BACKBUF
+// fhvideo.c
+void FHV_Init(void);
+void FHV_SetPalette(byte *palette);
+void FHV_Update(void);
+void FHV_Shutdown(void);
+#endif
 
 #ifdef FH_MODEY
 // fh_modey.c
