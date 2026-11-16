@@ -1,0 +1,7 @@
+build/
+dist/
+*.obj
+*.err
+*.map
+*.WAD
+*.wad

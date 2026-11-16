@@ -1,0 +1,42 @@
+name: Build FastHeretic
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install OpenWatcom 2
+        uses: open-watcom/setup-watcom@v0
+        with:
+          version: "2.0"
+
+      - name: Install NASM and DOSBox
+        run: sudo apt-get update && sudo apt-get install -y nasm dosbox
+
+      - name: Build
+        run: |
+          for cpu in 386 486 586; do ./build.sh $cpu; done
+
+      - name: Bind DOS/32A extender
+        run: |
+          ./bind.sh build/386/fhtic.exe
+          ./bind.sh build/486/fhtic4.exe
+          ./bind.sh build/586/fhtic5.exe
+
+      - name: Collect
+        run: |
+          mkdir dist
+          cp build/386/FHTIC.EXE build/486/FHTIC4.EXE build/586/FHTIC5.EXE dist/
+          cp README.md dist/README.TXT
+          cp heretic/license.txt dist/LICENSE.TXT
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FastHeretic-${{ github.run_number }}
+          path: dist/
