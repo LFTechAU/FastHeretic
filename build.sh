@@ -11,13 +11,14 @@ case "$CPU" in
   *) echo "unknown cpu $CPU"; exit 1 ;;
 esac
 
+export INCLUDE="$WATCOM/h"
 ROOT=$(cd "$(dirname "$0")" && pwd)
 OUT="$ROOT/build/$CPU"
 mkdir -p "$OUT"
 cd "$OUT"
 find . -maxdepth 1 -name '*.obj' -delete
 
-CCOPTS="-dAPPVER_EXEDEF=TIC13 ${CCEXTRA} -omaxtnrih -ol+ -oe=32 -zp1 $CPUOPT -ei -j -zq -zc -i=$ROOT/heretic -i=$ROOT/apodmx"
+CCOPTS="-dAPPVER_EXEDEF=TIC13 ${CCEXTRA} -omaxtnrih -ol+ -oe=32 -zp1 $CPUOPT -ei -j -zq -zc -bt=dos -i=$ROOT/heretic -i=$ROOT/apodmx"
 
 HERETIC_C="am_map ct_chat d_main d_net f_finale g_game info in_lude i_cyber i_ibm i_sound \
  mn_menu m_misc p_ceilng p_doors p_enemy p_floor p_inter p_lights p_map p_maputl p_mobj \
