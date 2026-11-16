@@ -21,7 +21,7 @@ jobs:
 
       - name: Build
         run: |
-          for cpu in 386 486 586; do ./build.sh $cpu; done
+          for cpu in 386 486 586 stock; do ./build.sh $cpu; done
 
       - name: Bind DOS/32A extender
         run: |
@@ -33,6 +33,7 @@ jobs:
         run: |
           mkdir dist
           cp build/386/FHTIC.EXE build/486/FHTIC4.EXE build/586/FHTIC5.EXE dist/
+          cp build/stock/htic13f.exe dist/HTIC13F.EXE
           cp README.md dist/README.TXT
           cp heretic/license.txt dist/LICENSE.TXT
 

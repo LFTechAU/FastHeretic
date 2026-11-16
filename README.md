@@ -15,7 +15,10 @@ Executables
   FHTIC4.EXE   built for 486 / 5x86
   FHTIC5.EXE   built for Pentium
 
-All use the DOS/32A extender, so DOS4GW.EXE is not needed.
+  HTIC13F.EXE  plain Heretic v1.3 with only the -timedemo fix, for
+               comparing speeds (needs DOS4GW.EXE from your Heretic)
+
+The FHTIC files use the DOS/32A extender, so DOS4GW.EXE is not needed.
 Use the original SETUP.EXE to configure sound and controls.
 
 Benchmark:  FHTIC -timedemo demo1

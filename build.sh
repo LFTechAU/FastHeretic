@@ -1,6 +1,8 @@
 #!/bin/bash
 # FastHeretic build script (OpenWatcom 2 on Linux)
-# Usage: ./build.sh [cpu]   cpu = 386 (default) | 486 | 586
+# Usage: ./build.sh [cpu]   cpu = 386 (default) | 486 | 586 | stock
+# "stock" = plain Heretic v1.3 settings (original compiler flags, DOS/4GW,
+# FastHeretic options off) with only the -timedemo fix: a fair baseline.
 set -e
 
 CPU=${1:-386}
@@ -8,6 +10,7 @@ case "$CPU" in
   386) CPUOPT="-3r"; EXE=fhtic.exe ;;
   486) CPUOPT="-4r"; EXE=fhtic4.exe ;;
   586) CPUOPT="-5r"; EXE=fhtic5.exe ;;
+  stock) CPUOPT="-4r"; EXE=htic13f.exe ;;
   *) echo "unknown cpu $CPU"; exit 1 ;;
 esac
 
@@ -18,7 +21,13 @@ mkdir -p "$OUT"
 cd "$OUT"
 find . -maxdepth 1 -name '*.obj' -delete
 
+if [ "$CPU" = stock ]; then
+  CCOPTS="-dAPPVER_EXEDEF=TIC13 -omaxet -zp1 -4r -ei -j -zq -bt=dos -i=$ROOT/heretic -i=$ROOT/apodmx"
+  STUB="$WATCOM/binw/wstub.exe"
+else
+  STUB="$ROOT/dos32a/STUB32A.EXE"
 CCOPTS="-dAPPVER_EXEDEF=TIC13 ${CCEXTRA} -omaxtnrih -ol+ -oe=32 -zp1 $CPUOPT -ei -j -zq -zc -bt=dos -i=$ROOT/heretic -i=$ROOT/apodmx"
+fi
 
 HERETIC_C="am_map ct_chat d_main d_net f_finale g_game info in_lude i_cyber i_ibm i_sound \
  mn_menu m_misc p_ceilng p_doors p_enemy p_floor p_inter p_lights p_map p_maputl p_mobj \
@@ -45,7 +54,7 @@ nasm -f obj -o fhasm.obj "$ROOT/heretic/fhasm.asm"
   echo "lib audio_wf.lib"
   echo "lib gf1_osf.lib"
   echo "lib pawe32.lib"
-  echo "option stub=$ROOT/dos32a/STUB32A.EXE"
+  echo "option stub=$STUB"
   for f in $HERETIC_C $APODMX_C i_ibm_a linear fhasm; do echo "file $f.obj"; done
 } > link.lnk
 
