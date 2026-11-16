@@ -591,6 +591,9 @@ void R_ExecuteSetViewSize (void)
 	R_FH_SetDrawers ();
 
 	R_InitBuffer (scaledviewwidth, viewheight);
+#ifdef FH_MODEY
+	R_FHY_InitTables ();
+#endif
 
 	R_InitTextureMapping ();
 
@@ -808,6 +811,9 @@ void R_SetupFrame(player_t *player)
 #endif
 #ifdef __WATCOMC__
 	destview = destscreen+(viewwindowx>>2)+viewwindowy*80;
+#endif
+#ifdef FH_MODEY
+	R_FHY_SetupFrame ();
 #endif
 
 #if 0

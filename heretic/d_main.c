@@ -204,6 +204,10 @@ void D_Display(void)
 {
 	extern boolean MenuActive;
 	extern boolean askforquit;
+#ifdef FH_MODEY
+	extern int InfoType;
+	extern int screenblocks;
+#endif
 
 	// Change the view size if needed
 	if(setsizeneeded)
@@ -223,6 +227,21 @@ void D_Display(void)
 			AM_Drawer ();
 		else
 			R_RenderPlayerView (&players[displayplayer]);
+#ifdef FH_MODEY
+		if (!automapactive && !(MenuActive && InfoType))
+		{ // view is in the page already: status bar, border, then overlays
+			fh_directframe = 1;
+			if (screenblocks > 10)
+				fh_planar = destscreen;
+			SB_Drawer();
+			fh_planar = NULL;
+			FHY_Composite();
+			fh_planar = destscreen;
+			FH_DrawFPS();
+			CT_Drawer();
+			break;
+		}
+#endif
 		FH_DrawFPS();
 		CT_Drawer();
 		UpdateState |= I_FULLVIEW;
@@ -260,6 +279,10 @@ void D_Display(void)
 		if (fh_shotmenu)
 			MN_FHShowMenu(fh_shotmenu);
 		MN_Drawer();
+#ifdef FH_MODEY
+		if (fh_directframe)
+			FHY_ReadPage();
+#endif
 		M_ScreenShot ();
 		players[consoleplayer].message = NULL;
 		fh_shottic = -1;
@@ -267,6 +290,9 @@ void D_Display(void)
 
 	// Menu drawing
 	MN_Drawer();
+#ifdef FH_MODEY
+	fh_planar = NULL;
+#endif
 
 	// Send out any new accumulation
 	NetUpdate();

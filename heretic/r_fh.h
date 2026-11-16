@@ -23,4 +23,18 @@ void R_ComputeSkyColor(void);
 
 void R_DrawSpanFlat(void);
 
+#ifdef FH_MODEY
+// fh_modey.c
+extern byte *fh_planar;      // set: V_Draw* go straight into this page
+extern int fh_directframe;   // this frame's view was drawn into VRAM
+void FHY_InitGraphics(void);
+void R_FHY_InitTables(void);
+void R_FHY_SetupFrame(void);
+void R_FHY_SetDrawers(void);
+void FHY_DrawPatch(int x, int y, patch_t *patch, int mode);
+void FHY_Composite(void);
+void FHY_ReadPage(void);
+void FHY_Update(void);
+#endif
+
 #endif

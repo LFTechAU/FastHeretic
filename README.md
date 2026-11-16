@@ -11,9 +11,16 @@ HERETIC1.WAD (shareware). No game data is included here.
 Executables
 -----------
 
-  FHTIC.EXE    built for 386 (also the safest choice)
-  FHTIC4.EXE   built for 486 / 5x86
-  FHTIC5.EXE   built for Pentium
+  FHTIC.EXE    Mode Y, built for 386 (also the safest choice)
+  FHTIC4.EXE   Mode Y, built for 486 / 5x86
+  FHTIC5.EXE   Mode Y, built for Pentium
+  FHTIC13H.EXE Mode 13h, built for 386
+
+Mode Y draws the 3D view straight into video memory and flips between
+3 pages, like vanilla Doom and FastDoom's FDOOM.EXE. Mode 13h draws into
+system memory and copies the view to the card every frame, like
+vanilla Heretic. Which is faster depends on the video card and bus, so
+try both on your machine with -timedemo demo1.
 
   HTIC13F.EXE  plain Heretic v1.3 with only the -timedemo fix, for
                comparing speeds (needs DOS4GW.EXE from your Heretic)
@@ -34,13 +41,28 @@ Options > FASTHERETIC... in the game menu, or on the command line:
   GHOSTS          SEE-THRU or SOLID (faster translucent sprites)
   FPS             frame rate counter, top right
 
-  -high -low -potato -flatsurfaces -flatsky -notrans -fps
+  -high -low -potato       detail level
+  -flatSpan                flat floors, no distance lighting (fastest)
+  -flatterSpan             flat floors, lit by distance
+  -defSpan                 textured floors
+  -flatsky / -defSky       flat or normal sky
+  -flatInv                 solid ghosts
+  -saturn                  checkerboard ghosts (Sega Saturn style)
+  -translucent / -defInv   normal see-through ghosts
+  -near / -far             only draw nearby items and decorations
+  -fps / -nofps            frame rate counter
+  -vsync / -novsync        wait for vertical retrace
+  -size N                  screen size 3 to 11
+  -csv                     add -timedemo results to FHBENCH.CSV
 
 Settings are saved to HERETIC.CFG (the original HERETIC.EXE ignores them).
 
 Changes
 -------
 
+v0.3  Mode Y renderer straight into video memory with 3-page flipping
+      (FHTIC.EXE); Mode 13h kept as FHTIC13H.EXE. FastDoom options
+      -flatSpan, -flatterSpan, -saturn, -near, -vsync, -size, -csv.
 v0.2.1 Fix -timedemo (vanilla Heretic misread every demo in timedemo mode).
 v0.2  Low and Potato detail with hand-tuned assembly drawers (from
       FastDoom), flat floors/ceilings, flat sky, solid ghosts, FPS

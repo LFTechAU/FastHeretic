@@ -335,6 +335,10 @@ void R_DrawSpanPotatoA(void);
 
 void R_FH_SetDrawers(void)
 {
+#ifdef FH_MODEY
+	R_FHY_SetDrawers();
+	return;
+#endif
 	switch (detailshift)
 	{
 	case 0:

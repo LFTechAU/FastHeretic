@@ -1799,6 +1799,9 @@ boolean G_CheckDemoStatus (void)
 				fclose(f);
 			}
 		}
+#ifdef FHY_DEBUG
+		{ extern int fhy_bc, fhy_sc; printf("bc %d sc %d\n", fhy_bc, fhy_sc); }
+#endif
 		I_Error ("timed %i gametics in %i realtics (%d.%02d fps)",gametic
 		, endtime-starttime,
 		(endtime-starttime) ? gametic*35/(endtime-starttime) : 0,

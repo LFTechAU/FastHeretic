@@ -991,7 +991,11 @@ void I_Update (void)
 //
 // blit screen to video
 //
+#ifndef FH_MODEY
 	if(DisplayTicker)
+#else
+	if(0)
+#endif
 	{
 		if(screenblocks > 9 || UpdateState&(I_FULLSCRN|I_MESSAGES))
 		{
@@ -1018,6 +1022,10 @@ void I_Update (void)
 			dest += 2;
 		}
 	}
+#ifdef FH_MODEY
+	FHY_Update();
+	return;
+#endif
 	if(UpdateState == I_NOUPDATE)
 	{
 		return;
@@ -1082,9 +1090,13 @@ void I_InitGraphics(void)
 		return;
 	}
 	grmode = true;
+#ifdef FH_MODEY
+	FHY_InitGraphics();
+#else
 	regs.w.ax = 0x13;
 	int386(0x10, (const union REGS *)&regs, &regs);
 	pcscreen = destscreen = (byte *)0xa0000;
+#endif
 	I_SetPalette(W_CacheLumpName("PLAYPAL", PU_CACHE));
 	I_InitDiskFlash();
 }
