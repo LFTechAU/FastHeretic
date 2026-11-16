@@ -114,6 +114,15 @@ void R_MapPlane (int y, int x1, int x2)
 		I_Error ("R_MapPlane: %i, %i at %i",x1,x2,y);
 #endif
 
+	if (fh_flatsurfaces == 2)
+	{ // FastHeretic: one colour per plane, no distance shading
+		ds_y = y;
+		ds_x1 = x1;
+		ds_x2 = x2;
+		spanfunc ();
+		return;
+	}
+
 	if (planeheight != cachedheight[y])
 	{
 		cachedheight[y] = planeheight;
@@ -458,6 +467,9 @@ extern int columnofs[MAXWIDTH];
 		if (light < 0)
 			light = 0;
 		planezlight = zlight[light];
+		if (fh_flatsurfaces == 2)
+			ds_colormap = fixedcolormap ? fixedcolormap
+				: planezlight[MAXLIGHTZ/4];
 
 		pl->top[pl->maxx+1] = 0xff;
 		pl->top[pl->minx-1] = 0xff;

@@ -1022,6 +1022,11 @@ void I_Update (void)
 	{
 		return;
 	}
+	if(fh_vsync)
+	{ // FastHeretic: wait for the start of vertical retrace
+		while(inp(0x3da)&8);
+		while(!(inp(0x3da)&8));
+	}
 	if(UpdateState&I_FULLSCRN)
 	{
 		memcpy(pcscreen, screen, SCREENWIDTH*SCREENHEIGHT);

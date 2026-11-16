@@ -6,6 +6,8 @@
 #include "doomdef.h"
 #include "p_local.h"
 #include "soundst.h"
+#include "r_fh.h"
+extern int screenblocks;
 
 // Macros
 
@@ -1781,8 +1783,26 @@ boolean G_CheckDemoStatus (void)
 	if (timingdemo)
 	{
 		endtime = I_GetTime ();
-		I_Error ("timed %i gametics in %i realtics",gametic
-		, endtime-starttime);
+		if (fh_csv)
+		{ // FastHeretic: append result to FHBENCH.CSV
+			FILE *f;
+			int realtics = endtime-starttime;
+			f = fopen("FHBENCH.CSV", "a");
+			if (f)
+			{
+				fprintf(f, "%d,%d,%d.%02d,%d,%d,%d,%d,%d\n",
+					gametic, realtics,
+					realtics ? gametic*35/realtics : 0,
+					realtics ? (gametic*3500/realtics)%100 : 0,
+					fh_detail, fh_flatsurfaces, fh_flatsky, fh_notrans,
+					screenblocks);
+				fclose(f);
+			}
+		}
+		I_Error ("timed %i gametics in %i realtics (%d.%02d fps)",gametic
+		, endtime-starttime,
+		(endtime-starttime) ? gametic*35/(endtime-starttime) : 0,
+		(endtime-starttime) ? (gametic*3500/(endtime-starttime))%100 : 0);
 	}
 
 	if (demoplayback)

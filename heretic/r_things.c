@@ -471,6 +471,10 @@ void R_ProjectSprite (mobj_t *thing)
 
 	if (tz < MINZ)
 		return;		// thing is behind view plane
+	// FastHeretic: skip far away items and decorations (monsters stay)
+	if (fh_near && tz > 1024*FRACUNIT && !(thing->flags & MF_COUNTKILL)
+		&& thing->player == NULL)
+		return;
 	xscale = FixedDiv(projection, tz);
 
 	gxt = -FixedMul(trx,viewsin);

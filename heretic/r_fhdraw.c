@@ -22,6 +22,9 @@ int fh_flatsurfaces;     // 1 = untextured floors and ceilings
 int fh_flatsky;          // 1 = sky drawn as a single colour
 int fh_notrans;          // 1 = translucent sprites drawn solid
 int fh_showfps;          // 1 = frame rate counter
+int fh_near;             // 1 = cull distant non-monster sprites
+int fh_vsync;            // 1 = wait for retrace before blits
+int fh_csv;              // 1 = append timedemo results to FHBENCH.CSV
 
 byte skyflatcolor;
 
@@ -112,6 +115,36 @@ void NAME(void) \
 		frac += fracstep; \
 	} while (count--); \
 }
+
+//--------------------------------------------------------------------------
+// Saturn style ghosts: a checkerboard of solid pixels (FastDoom -saturn)
+//--------------------------------------------------------------------------
+
+#define MAKE_SATURN(NAME, SHIFT, PUT, SOURCE) \
+void NAME(void) \
+{ \
+	int odd; \
+	COLUMN_SETUP(SHIFT) \
+	odd = (dc_x + dc_yl) & 1; \
+	do \
+	{ \
+		if (odd) \
+			PUT(dest, SOURCE); \
+		odd ^= 1; \
+		dest += SCREENWIDTH; \
+		frac += fracstep; \
+	} while (count--); \
+}
+
+#define SAT_SRC dc_colormap[dc_source[(frac >> FRACBITS) & 127]]
+#define SAT_TSRC dc_colormap[dc_translation[dc_source[frac >> FRACBITS]]]
+
+MAKE_SATURN(R_DrawSaturnColumn, 0, PUT1, SAT_SRC)
+MAKE_SATURN(R_DrawSaturnColumnLow, 1, PUT2, SAT_SRC)
+MAKE_SATURN(R_DrawSaturnColumnPotato, 2, PUT4, SAT_SRC)
+MAKE_SATURN(R_DrawSaturnTransColumn, 0, PUT1, SAT_TSRC)
+MAKE_SATURN(R_DrawSaturnTransColumnLow, 1, PUT2, SAT_TSRC)
+MAKE_SATURN(R_DrawSaturnTransColumnPotato, 2, PUT4, SAT_TSRC)
 
 MAKE_FUZZCOLUMN(R_DrawFuzzColumnLow, 1, PUT2)
 MAKE_FUZZCOLUMN(R_DrawFuzzColumnPotato, 2, PUT4)
@@ -306,32 +339,50 @@ void R_FH_SetDrawers(void)
 	{
 	case 0:
 		colfunc = basecolfunc = R_DrawColumn;
-		fuzzcolfunc = fh_notrans ? R_DrawColumn : R_DrawFuzzColumn;
+		fuzzcolfunc = (fh_notrans == 1) ? R_DrawColumn : R_DrawFuzzColumn;
 		transcolfunc = R_DrawTranslatedColumn;
-		transfuzzcolfunc = fh_notrans ? R_DrawTranslatedColumn
+		transfuzzcolfunc = (fh_notrans == 1) ? R_DrawTranslatedColumn
 			: R_DrawTranslatedFuzzColumn;
 		spanfunc = R_DrawSpan;
 		skycolfunc = fh_flatsky ? R_DrawSkyFlat : R_DrawSkyColumn;
 		break;
 	case 1:
 		colfunc = basecolfunc = R_DrawColumnLowA;
-		fuzzcolfunc = fh_notrans ? R_DrawColumnLowA : R_DrawFuzzColumnLow;
+		fuzzcolfunc = (fh_notrans == 1) ? R_DrawColumnLowA : R_DrawFuzzColumnLow;
 		transcolfunc = R_DrawTranslatedColumnLow;
-		transfuzzcolfunc = fh_notrans ? R_DrawTranslatedColumnLow
+		transfuzzcolfunc = (fh_notrans == 1) ? R_DrawTranslatedColumnLow
 			: R_DrawTranslatedFuzzColumnLow;
 		spanfunc = R_DrawSpanLowA;
 		skycolfunc = fh_flatsky ? R_DrawSkyFlatLow : R_DrawSkyColumnLow;
 		break;
 	default:
 		colfunc = basecolfunc = R_DrawColumnPotatoA;
-		fuzzcolfunc = fh_notrans ? R_DrawColumnPotatoA
+		fuzzcolfunc = (fh_notrans == 1) ? R_DrawColumnPotatoA
 			: R_DrawFuzzColumnPotato;
 		transcolfunc = R_DrawTranslatedColumnPotato;
-		transfuzzcolfunc = fh_notrans ? R_DrawTranslatedColumnPotato
+		transfuzzcolfunc = (fh_notrans == 1) ? R_DrawTranslatedColumnPotato
 			: R_DrawTranslatedFuzzColumnPotato;
 		spanfunc = R_DrawSpanPotatoA;
 		skycolfunc = fh_flatsky ? R_DrawSkyFlatPotato : R_DrawSkyColumnPotato;
 		break;
+	}
+	if (fh_notrans == 2)
+	{
+		switch (detailshift)
+		{
+		case 0:
+			fuzzcolfunc = R_DrawSaturnColumn;
+			transfuzzcolfunc = R_DrawSaturnTransColumn;
+			break;
+		case 1:
+			fuzzcolfunc = R_DrawSaturnColumnLow;
+			transfuzzcolfunc = R_DrawSaturnTransColumnLow;
+			break;
+		default:
+			fuzzcolfunc = R_DrawSaturnColumnPotato;
+			transfuzzcolfunc = R_DrawSaturnTransColumnPotato;
+			break;
+		}
 	}
 	if (fh_flatsurfaces)
 		spanfunc = R_DrawSpanFlat;

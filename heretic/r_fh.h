@@ -3,10 +3,13 @@
 #define __R_FH_H__
 
 extern int fh_detail;        // 0 = high, 1 = low, 2 = potato
-extern int fh_flatsurfaces;  // untextured floors and ceilings
+extern int fh_flatsurfaces;  // 0 textured, 1 flat lit by distance, 2 flat
 extern int fh_flatsky;       // single-colour sky
-extern int fh_notrans;       // translucent sprites drawn solid
+extern int fh_notrans;       // ghosts: 0 see-thru, 1 solid, 2 saturn
 extern int fh_showfps;       // frame rate counter
+extern int fh_near;          // only draw nearby non-monster sprites
+extern int fh_vsync;         // wait for vertical retrace before blits
+extern int fh_csv;           // append timedemo results to FHBENCH.CSV
 
 extern void (*skycolfunc)(void);
 extern void (*transcolfunc)(void);

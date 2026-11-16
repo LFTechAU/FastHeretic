@@ -1074,6 +1074,29 @@ void D_DoomMain(void)
 	if (M_CheckParm("-potato")) fh_detail = 2;
 	if (fh_detail < 0 || fh_detail > 2) fh_detail = 0;
 	if (M_CheckParm("-flatsurfaces")) fh_flatsurfaces = 1;
+	if (M_CheckParm("-flatterSpan")) fh_flatsurfaces = 1;
+	if (M_CheckParm("-flatSpan")) fh_flatsurfaces = 2;
+	if (M_CheckParm("-defSpan")) fh_flatsurfaces = 0;
+	if (M_CheckParm("-defSky")) fh_flatsky = 0;
+	if (M_CheckParm("-flatInv")) fh_notrans = 1;
+	if (M_CheckParm("-saturn")) fh_notrans = 2;
+	if (M_CheckParm("-translucent") || M_CheckParm("-defInv")) fh_notrans = 0;
+	if (M_CheckParm("-near")) fh_near = 1;
+	if (M_CheckParm("-far")) fh_near = 0;
+	if (M_CheckParm("-vsync")) fh_vsync = 1;
+	if (M_CheckParm("-novsync")) fh_vsync = 0;
+	if (M_CheckParm("-nofps")) fh_showfps = 0;
+	if (M_CheckParm("-csv")) fh_csv = 1;
+	p = M_CheckParm("-size");
+	if (p && p < myargc-1)
+	{
+		extern int screenblocks;
+		screenblocks = atoi(myargv[p+1]);
+		if (screenblocks < 3) screenblocks = 3;
+		if (screenblocks > 11) screenblocks = 11;
+	}
+	if (fh_flatsurfaces < 0 || fh_flatsurfaces > 2) fh_flatsurfaces = 0;
+	if (fh_notrans < 0 || fh_notrans > 2) fh_notrans = 0;
 	if (M_CheckParm("-flatsky")) fh_flatsky = 1;
 	if (M_CheckParm("-notrans")) fh_notrans = 1;
 	if (M_CheckParm("-fps")) fh_showfps = 1;

@@ -300,14 +300,15 @@ static MenuItem_t Options3Items[] =
 	{ ITT_EFUNC, "FLOORS :", SCFastOption, 1, MENU_NONE },
 	{ ITT_EFUNC, "SKY :", SCFastOption, 2, MENU_NONE },
 	{ ITT_EFUNC, "GHOSTS :", SCFastOption, 3, MENU_NONE },
-	{ ITT_EFUNC, "FPS :", SCFastOption, 4, MENU_NONE }
+	{ ITT_EFUNC, "FPS :", SCFastOption, 4, MENU_NONE },
+	{ ITT_EFUNC, "ITEMS :", SCFastOption, 5, MENU_NONE }
 };
 
 static Menu_t Options3Menu =
 {
-	64, 40,
+	64, 30,
 	DrawOptions3Menu,
-	5, Options3Items,
+	6, Options3Items,
 	0,
 	MENU_OPTIONS
 };
@@ -854,12 +855,16 @@ static char *DetailNames[] = { "HIGH", "LOW", "POTATO" };
 
 static void DrawOptions3Menu(void)
 {
-	MN_DrTextB(DetailNames[fh_detail], 180, 40);
-	MN_DrTextB(fh_flatsurfaces ? "FLAT" : "TEXTURED", 180, 60);
-	MN_DrTextB(fh_flatsky ? "FLAT" : "NORMAL", 180, 80);
-	MN_DrTextB(fh_notrans ? "SOLID" : "SEE-THRU", 180, 100);
-	MN_DrTextB(fh_showfps ? "ON" : "OFF", 180, 120);
-	MN_DrTextA("FASTHERETIC V" FH_VERSION " BY LFTECH", 64, 150);
+	static char *floors[] = { "TEXTURED", "FLAT LIT", "FLAT" };
+	static char *ghosts[] = { "SEE-THRU", "SOLID", "SATURN" };
+
+	MN_DrTextB(DetailNames[fh_detail], 180, 30);
+	MN_DrTextB(floors[fh_flatsurfaces], 180, 50);
+	MN_DrTextB(fh_flatsky ? "FLAT" : "NORMAL", 180, 70);
+	MN_DrTextB(ghosts[fh_notrans], 180, 90);
+	MN_DrTextB(fh_showfps ? "ON" : "OFF", 180, 110);
+	MN_DrTextB(fh_near ? "NEAR" : "ALL", 180, 130);
+	MN_DrTextA("FASTHERETIC V" FH_VERSION " BY LFTECH", 64, 160);
 }
 
 void FH_CycleDetail(void)
@@ -876,7 +881,7 @@ static APPVER_MENUITEM_RETTYPE SCFastOption(int option)
 			FH_CycleDetail();
 			break;
 		case 1:
-			fh_flatsurfaces ^= 1;
+			fh_flatsurfaces = (fh_flatsurfaces + 1) % 3;
 			R_FH_SetDrawers();
 			break;
 		case 2:
@@ -884,11 +889,14 @@ static APPVER_MENUITEM_RETTYPE SCFastOption(int option)
 			R_FH_SetDrawers();
 			break;
 		case 3:
-			fh_notrans ^= 1;
+			fh_notrans = (fh_notrans + 1) % 3;
 			R_FH_SetDrawers();
 			break;
 		case 4:
 			fh_showfps ^= 1;
+			break;
+		case 5:
+			fh_near ^= 1;
 			break;
 	}
 	S_StartSound(NULL, sfx_chat);
