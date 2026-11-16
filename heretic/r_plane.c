@@ -113,6 +113,10 @@ void R_MapPlane (int y, int x1, int x2)
 	if (x2 < x1 || x1<0 || x2>=viewwidth || (unsigned)y>viewheight)
 		I_Error ("R_MapPlane: %i, %i at %i",x1,x2,y);
 #endif
+#ifdef FH_MODEYH
+	if ((y + viewwindowy) & 1)
+		return;     // half height: odd screen lines are not drawn
+#endif
 
 	if (fh_flatsurfaces == 2)
 	{ // FastHeretic: one colour per plane, no distance shading

@@ -25,6 +25,7 @@ extern _dc_iscale
 extern _dc_texturemid
 extern _dc_source
 extern _centery
+extern _viewwindowy
 
 extern _my_ylookup
 extern _my_ofs
@@ -126,6 +127,65 @@ yvscale1:
   mov   bl,[eax]
   mov   [edi],bl
 yvscale0:
+  pop   ebp
+  pop   edi
+  pop   esi
+  pop   edx
+  pop   ecx
+  pop   ebx
+  ret
+
+;============================================================================
+; R_DrawColumnYHA : half height Mode Y, only rows on even screen lines,
+; one page row per 2 screen rows (shares the unrolled loop above)
+;============================================================================
+
+global R_DrawColumnYHA_
+R_DrawColumnYHA_:
+  push  ebx
+  push  ecx
+  push  edx
+  push  esi
+  push  edi
+  push  ebp
+
+  mov   ebx,[_dc_x]
+  mov   al,[_my_mask+ebx]
+  cmp   al,[_my_curmask]
+  je    .masked
+  mov   [_my_curmask],al
+  mov   dx,0x3c5
+  out   dx,al
+.masked:
+  mov   eax,[_dc_yl]
+  mov   ecx,[_viewwindowy]
+  lea   edx,[eax+ecx]
+  and   edx,1
+  add   eax,edx                 ; first row on an even screen line
+  mov   ebp,[_dc_yh]
+  lea   edx,[ebp+ecx]
+  and   edx,1
+  sub   ebp,edx                 ; last row on an even screen line
+  mov   edi,[_my_ylookup+ebp*4]
+  sub   ebp,eax
+  js    .done
+  shr   ebp,1                   ; ebp = page rows - 1
+  add   edi,[_my_ofs+ebx*4]
+
+  mov   ecx,[_dc_iscale]
+  sub   eax,[_centery]
+  imul  ecx
+  mov   edx,[_dc_texturemid]
+  add   ecx,ecx                 ; two screen rows per page row
+  shl   ecx,9
+  add   edx,eax
+  mov   esi,[_dc_source]
+  shl   edx,9
+  mov   eax,[_dc_colormap]
+
+  jmp   [yscalecalls+4+ebp*4]
+
+.done:
   pop   ebp
   pop   edi
   pop   esi

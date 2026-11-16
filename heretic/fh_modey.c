@@ -32,6 +32,15 @@
 
 #define PAGEBYTES  0x4000
 
+// Half height Mode Y (FHTICH.EXE): 100 lines, each shown 4 times. Only
+// even screen rows are drawn; screen row r goes to page row r >> YH.
+#ifdef FH_MODEYH
+#define YH 1
+#else
+#define YH 0
+#endif
+#define PAGEROWS (SCREENHEIGHT >> YH)
+
 extern byte *destscreen, *destview, *pcscreen;
 extern int screenblocks;
 extern byte *tinttable;
@@ -84,6 +93,10 @@ void FHY_InitGraphics(void)
 	outp(CRTC_INDEX + 1, inp(CRTC_INDEX + 1) & ~0x40);
 	outp(CRTC_INDEX, 0x17);                     // mode control: byte mode
 	outp(CRTC_INDEX + 1, inp(CRTC_INDEX + 1) | 0x40);
+#if YH
+	outp(CRTC_INDEX, 9);                        // max scan line: 4 per row
+	outp(CRTC_INDEX + 1, (inp(CRTC_INDEX + 1) & 0xe0) | 3);
+#endif
 	outp(GC_INDEX, 4);                          // leave read map selected
 	my_curmask = 15;
 	borderpages = sbpages = 3;
@@ -123,23 +136,26 @@ void R_FHY_SetupFrame(void)
 	int i;
 	byte *row;
 
-	row = destscreen + viewwindowy * 80;
-	for (i = 0; i < viewheight; i++, row += 80)
-		my_ylookup[i] = row;
+	for (i = 0; i < viewheight; i++)
+		my_ylookup[i] = destscreen + ((viewwindowy + i) >> YH) * 80;
 }
 
 //==========================================================================
 // Column drawers
 //==========================================================================
 
+// first row to draw: in half height only rows on even screen lines
+#define YFIRST(y) ((y) + (((y) + viewwindowy) & YH))
+
 #define YCOL_SETUP \
-	int count; byte *dest; fixed_t frac, fracstep; \
-	count = dc_yh - dc_yl; \
-	if (count < 0) return; \
+	int count, yl; byte *dest; fixed_t frac, fracstep; \
+	yl = YFIRST(dc_yl); \
+	if (dc_yh < yl) return; \
+	count = (dc_yh - yl) >> YH; \
 	SETMASK(my_mask[dc_x]); \
-	dest = my_ylookup[dc_yl] + my_ofs[dc_x]; \
-	fracstep = dc_iscale; \
-	frac = dc_texturemid + (dc_yl - centery) * fracstep;
+	dest = my_ylookup[yl] + my_ofs[dc_x]; \
+	frac = dc_texturemid + (yl - centery) * dc_iscale; \
+	fracstep = dc_iscale << YH;
 
 void R_DrawColumnY(void)
 {
@@ -196,7 +212,7 @@ void R_DrawSaturnColumnY(void)
 {
 	int odd;
 	YCOL_SETUP
-	odd = (dc_x + dc_yl) & 1;
+	odd = (dc_x + (yl >> YH)) & 1;
 	do
 	{
 		if (odd)
@@ -211,7 +227,7 @@ void R_DrawSaturnTransColumnY(void)
 {
 	int odd;
 	YCOL_SETUP
-	odd = (dc_x + dc_yl) & 1;
+	odd = (dc_x + (yl >> YH)) & 1;
 	do
 	{
 		if (odd)
@@ -226,15 +242,19 @@ void R_DrawSkyColumnY(void)
 {
 	int count; byte *dest; byte *source;
 
-	count = dc_yh - dc_yl;
-	if (count < 0)
+	int yl;
+
+	yl = YFIRST(dc_yl);
+	if (dc_yh < yl)
 		return;
+	count = (dc_yh - yl) >> YH;
 	SETMASK(my_mask[dc_x]);
-	dest = my_ylookup[dc_yl] + my_ofs[dc_x];
-	source = dc_source + (dc_texturemid >> FRACBITS) + (dc_yl - centery);
+	dest = my_ylookup[yl] + my_ofs[dc_x];
+	source = dc_source + (dc_texturemid >> FRACBITS) + (yl - centery);
 	do
 	{
-		*dest = *source++;
+		*dest = *source;
+		source += 1 << YH;
 		dest += 80;
 	} while (count--);
 }
@@ -243,11 +263,14 @@ void R_DrawSkyFlatY(void)
 {
 	int count; byte *dest; byte c;
 
-	count = dc_yh - dc_yl;
-	if (count < 0)
+	int yl;
+
+	yl = YFIRST(dc_yl);
+	if (dc_yh < yl)
 		return;
+	count = (dc_yh - yl) >> YH;
 	SETMASK(my_mask[dc_x]);
-	dest = my_ylookup[dc_yl] + my_ofs[dc_x];
+	dest = my_ylookup[yl] + my_ofs[dc_x];
 	c = skyflatcolor;
 	do
 	{
@@ -274,6 +297,10 @@ void R_DrawSpanY(void)
 	int passes, k, u;
 	fixed_t xfrac, yfrac, xstep, ystep;
 
+#if YH
+	if ((ds_y + viewwindowy) & 1)
+		return;
+#endif
 	passes = 4 >> detailshift;
 	xstep = ds_xstep * passes;
 	ystep = ds_ystep * passes;
@@ -324,6 +351,10 @@ static void FHY_HLine(byte *row, int px1, int px2, byte c)
 
 void R_DrawSpanFlatY(void)
 {
+#if YH
+	if ((ds_y + viewwindowy) & 1)
+		return;
+#endif
 	FHY_HLine(my_ylookup[ds_y],
 		viewwindowx + (ds_x1 << detailshift),
 		viewwindowx + ((ds_x2 + 1) << detailshift) - 1,
@@ -335,6 +366,11 @@ void R_DrawSpanFlatY(void)
 //==========================================================================
 
 void R_DrawColumnYA(void);      // fhasmy.asm
+void R_DrawColumnYHA(void);
+
+#if YH
+#define R_DrawColumnYA R_DrawColumnYHA
+#endif
 
 void R_FHY_SetDrawers(void)
 {
@@ -382,7 +418,7 @@ static void FHY_AddBox(int x1, int y1, int x2, int y2)
 // mode 0 = solid, 1 = translucent, 2 = solid with shadow
 void FHY_DrawPatch(int x, int y, patch_t *patch, int mode)
 {
-	int col, w, count, px;
+	int col, w, count, px, r;
 	column_t *column;
 	byte *source, *dest, *top;
 
@@ -411,14 +447,20 @@ void FHY_DrawPatch(int x, int y, patch_t *patch, int mode)
 			column_t *c2 = column;
 			SETMASK(1 << ((px + 2) & 3));
 			READPLANE((px + 2) & 3);
-			top = fh_planar + (y + 2) * 80 + ((px + 2) >> 2);
+			top = fh_planar + ((px + 2) >> 2);
 			while (c2->topdelta != 0xff)
 			{
-				dest = top + c2->topdelta * 80;
+				r = y + 2 + c2->topdelta;
 				count = c2->length;
-				if (y + 2 + c2->topdelta + count > SCREENHEIGHT)
-					count = SCREENHEIGHT - (y + 2 + c2->topdelta);
-				while (count-- > 0)
+				if (r + count > SCREENHEIGHT)
+					count = SCREENHEIGHT - r;
+				if (r & YH)
+				{
+					r++;
+					count--;
+				}
+				dest = top + (r >> YH) * 80;
+				for (; count > 0; count -= 1 << YH)
 				{
 					*dest = tinttable[(*dest) << 8];
 					dest += 80;
@@ -429,25 +471,34 @@ void FHY_DrawPatch(int x, int y, patch_t *patch, int mode)
 		SETMASK(1 << (px & 3));
 		if (mode == 1)
 			READPLANE(px & 3);
-		top = fh_planar + y * 80 + (px >> 2);
+		top = fh_planar + (px >> 2);
 		while (column->topdelta != 0xff)
 		{
 			source = (byte *)column + 3;
-			dest = top + column->topdelta * 80;
+			r = y + column->topdelta;
 			count = column->length;
+			if (r & YH)
+			{ // half height: odd screen rows are not shown
+				r++;
+				source++;
+				count--;
+			}
+			dest = top + (r >> YH) * 80;
 			if (mode == 1)
 			{
-				while (count--)
+				for (; count > 0; count -= 1 << YH)
 				{
-					*dest = tinttable[((*dest) << 8) + *source++];
+					*dest = tinttable[((*dest) << 8) + *source];
+					source += 1 << YH;
 					dest += 80;
 				}
 			}
 			else
 			{
-				while (count--)
+				for (; count > 0; count -= 1 << YH)
 				{
-					*dest = *source++;
+					*dest = *source;
+					source += 1 << YH;
 					dest += 80;
 				}
 			}
@@ -477,8 +528,10 @@ void FHY_CopyRect(int x, int y, int w, int h)
 		SETMASK(1 << plane);
 		for (j = 0; j < h; j++)
 		{
+			if ((y + j) & YH)
+				continue;
 			src = screen + (y + j) * SCREENWIDTH + (bx1 << 2) + plane;
-			dst = destscreen + (y + j) * 80 + bx1;
+			dst = destscreen + ((y + j) >> YH) * 80 + bx1;
 			for (i = 0; i < n; i++, src += 4)
 				dst[i] = *src;
 		}
@@ -488,19 +541,22 @@ void FHY_CopyRect(int x, int y, int w, int h)
 // Whole screen copy, used for automap, intermission, finale and pages
 void FHY_CopyScreen(void)
 {
-	int plane, i;
+	int plane, i, r;
 	byte *src;
 	unsigned *dst;
 
 	for (plane = 0; plane < 4; plane++)
 	{
 		SETMASK(1 << plane);
-		src = screen + plane;
 		dst = (unsigned *)destscreen;
-		for (i = 0; i < SCREENWIDTH * SCREENHEIGHT / 16; i++, src += 16)
+		for (r = 0; r < PAGEROWS; r++)
 		{
-			*dst++ = src[0] | (src[4] << 8) | (src[8] << 16)
-				| ((unsigned)src[12] << 24);
+			src = screen + (r << YH) * SCREENWIDTH + plane;
+			for (i = 0; i < SCREENWIDTH / 16; i++, src += 16)
+			{
+				*dst++ = src[0] | (src[4] << 8) | (src[8] << 16)
+					| ((unsigned)src[12] << 24);
+			}
 		}
 	}
 }
@@ -508,16 +564,19 @@ void FHY_CopyScreen(void)
 // Read the page being drawn back into `screen` (for screenshots)
 void FHY_ReadPage(void)
 {
-	int plane, i;
+	int plane, i, r;
 	byte *dst, *src;
 
 	for (plane = 0; plane < 4; plane++)
 	{
 		READPLANE(plane);
-		src = destscreen;
-		dst = screen + plane;
-		for (i = 0; i < SCREENWIDTH * SCREENHEIGHT / 4; i++, dst += 4)
-			*dst = src[i];
+		for (r = 0; r < SCREENHEIGHT; r++)
+		{
+			src = destscreen + (r >> YH) * 80;
+			dst = screen + r * SCREENWIDTH + plane;
+			for (i = 0; i < 80; i++, dst += 4)
+				*dst = src[i];
+		}
 	}
 	borderpages = sbpages = 3;
 }

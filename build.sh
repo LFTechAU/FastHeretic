@@ -2,7 +2,7 @@
 # FastHeretic build script (OpenWatcom 2 on Linux)
 # Usage: ./build.sh [cpu] [mode]
 #   cpu  = 386 (default) | 486 | 586 | stock
-#   mode = y (default, Mode Y straight to video memory) | 13h
+#   mode = y (default, Mode Y straight to video memory) | 13h | yh (half height)
 #          | cga bwc c16 512 cah cvb ega hgc inc pcp 400 (FastDoom modes)
 #          | t1 t12 t25 t43 t50 mda (text modes)
 # "stock" = plain Heretic v1.3 settings (original compiler flags, DOS/4GW,
@@ -26,6 +26,7 @@ fdmode() { MODEDEF="-dFH_BACKBUF -d$1"; NASMDEF="-D$1"; FDC=$2; FDASM=$3; EXE=fh
 case "$MODE" in
   y)   MODEDEF="-dFH_MODEY"; EXE=fhtic$SUF.exe; EXTRAOBJ="fhasmy" ;;
   13h) MODEDEF=""; EXE=fhtic13h$SUF.exe ;;
+  yh)  MODEDEF="-dFH_MODEY -dFH_MODEYH"; EXE=fhtich$SUF.exe; EXTRAOBJ="fhasmy" ;;
   cga) fdmode MODE_CGA     i_cga4    cga4   cga ;;
   bwc) fdmode MODE_CGA_BW  i_cgabw   cgabw  bwc ;;
   c16) fdmode MODE_CGA16   i_cga16   cga16  c16 ;;

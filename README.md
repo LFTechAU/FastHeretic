@@ -15,6 +15,8 @@ Executables
   FHTIC4.EXE   Mode Y, built for 486 / 5x86
   FHTIC5.EXE   Mode Y, built for Pentium
   FHTIC13H.EXE Mode 13h, built for 386
+  FHTICH.EXE   Mode Y at half height (320x100, each line shown twice
+               as tall): about a quarter faster again
 
 Other video cards (all built for 386, from FastDoom's video code):
 

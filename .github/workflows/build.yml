@@ -21,7 +21,7 @@ jobs:
 
       - name: Build
         run: |
-          for m in y 13h cga bwc c16 512 cah cvb ega hgc inc pcp 400 t1 t12 t25 t43 t50 mda; do ./build.sh 386 $m; done
+          for m in y yh 13h cga bwc c16 512 cah cvb ega hgc inc pcp 400 t1 t12 t25 t43 t50 mda; do ./build.sh 386 $m; done
           ./build.sh 486 y
           ./build.sh 586 y
           ./build.sh stock
