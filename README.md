@@ -38,6 +38,7 @@ Settings are saved to HERETIC.CFG (the original HERETIC.EXE ignores them).
 Changes
 -------
 
+v0.2.1 Fix -timedemo (vanilla Heretic misread every demo in timedemo mode).
 v0.2  Low and Potato detail with hand-tuned assembly drawers (from
       FastDoom), flat floors/ceilings, flat sky, solid ghosts, FPS
       counter, FASTHERETIC options menu page, F5 detail key.

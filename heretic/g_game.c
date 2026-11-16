@@ -1747,6 +1747,15 @@ void G_TimeDemo (char *name)
 	skill = *demo_p++;
 	episode = *demo_p++;
 	map = *demo_p++;
+
+	// FastHeretic: vanilla Heretic forgot to skip the player-in-game
+	// bytes here, so every -timedemo desynced from the first tic.
+	{
+		int i;
+		for (i=0 ; i<MAXPLAYERS ; i++)
+			playeringame[i] = *demo_p++;
+	}
+
 	G_InitNew (skill, episode, map);
 	usergame = false;
 	demoplayback = true;
