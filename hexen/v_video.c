@@ -11,6 +11,7 @@
 //**************************************************************************
 
 #include "h2def.h"
+#include "r_local.h"
 
 #define SC_INDEX 0x3c4
 
@@ -49,6 +50,17 @@ void V_DrawPatch(int x, int y, patch_t *patch)
 	byte *source;
 	int w;
 
+#ifdef FH_PATCHDIRECT
+	if (fh_planar)
+	{
+		FHY_DrawPatch(x, y, patch, 0);
+		return;
+	}
+#endif
+#if defined(FH_VBD) && !defined(FH_PATCHDIRECT)
+	if (fh_planar)
+		FHY_NoteBox(x, y, patch, 0);
+#endif
 	y -= SHORT(patch->topoffset);
 	x -= SHORT(patch->leftoffset);
 	if(x < 0 || x+SHORT(patch->width) > SCREENWIDTH || y < 0
@@ -96,10 +108,21 @@ void V_DrawFuzzPatch (int x, int y, patch_t *patch)
 	byte		*desttop, *dest, *source;
 	int			w;
 	
+#ifdef FH_PATCHDIRECT
+	if (fh_planar)
+	{
+		FHY_DrawPatch(x, y, patch, 1);
+		return;
+	}
+#endif
+#if defined(FH_VBD) && !defined(FH_PATCHDIRECT)
+	if (fh_planar)
+		FHY_NoteBox(x, y, patch, 1);
+#endif
 	y -= SHORT(patch->topoffset);
 	x -= SHORT(patch->leftoffset);
 
-	if (x<0||x+SHORT(patch->width) >SCREENWIDTH || y<0 || y+SHORT(patch->height)>SCREENHEIGHT)
+	if (x<0||x+SHORT(patch->width) >SCREENWIDTH || y<0 || y+SHORT(patch->height)>SCREENHEIGHT )
 		I_Error ("Bad V_DrawPatch");
 
 	col = 0;
@@ -199,10 +222,21 @@ void V_DrawShadowedPatch(int x, int y, patch_t *patch)
 	byte		*desttop2, *dest2;
 	int			w;
 	
+#ifdef FH_PATCHDIRECT
+	if (fh_planar)
+	{
+		FHY_DrawPatch(x, y, patch, 2);
+		return;
+	}
+#endif
+#if defined(FH_VBD) && !defined(FH_PATCHDIRECT)
+	if (fh_planar)
+		FHY_NoteBox(x, y, patch, 2);
+#endif
 	y -= SHORT(patch->topoffset);
 	x -= SHORT(patch->leftoffset);
 
-	if (x<0||x+SHORT(patch->width) >SCREENWIDTH || y<0 || y+SHORT(patch->height)>SCREENHEIGHT)
+	if (x<0||x+SHORT(patch->width) >SCREENWIDTH || y<0 || y+SHORT(patch->height)>SCREENHEIGHT )
 		I_Error ("Bad V_DrawPatch");
 
 	col = 0;

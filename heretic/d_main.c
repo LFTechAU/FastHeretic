@@ -183,6 +183,7 @@ static int fh_quitframes, fh_quitstart;
 extern void MN_FHShowMenu(int which);
 
 extern void MN_DrTextA(char *text, int x, int y);
+extern int MN_TextAWidth(char *text);
 extern void M_ScreenShot(void);
 extern int ticcount;
 
@@ -219,7 +220,8 @@ static void FH_DrawFPS(void)
 	if (fh_showfps)
 	{
 		sprintf(text, "%d", fps_value);
-		MN_DrTextA(text, FH_VIRTX(viewwindowx + scaledviewwidth) - 20, FH_VIRTY(viewwindowy) + 2);
+		MN_DrTextA(text, FH_VIRTX(viewwindowx + scaledviewwidth) - MN_TextAWidth(text) - 4,
+			FH_VIRTY(viewwindowy) + 2);
 	}
 }
 

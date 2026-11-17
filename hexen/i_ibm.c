@@ -1363,7 +1363,14 @@ void I_SetPalette(byte *palette)
 	{
 		return;
 	}
-	I_WaitVBL(1);
+#ifdef FH_BACKBUF
+	FHV_SetPalette(palette);
+	return;
+#endif
+	if(fh_fixdac)
+	{ // FastHexen: vanilla waits for retrace on every palette change
+		I_WaitVBL(1);
+	}
 	_outbyte(PEL_WRITE_ADR, 0);
 	for(i = 0; i < 768; i++)
 	{
@@ -1403,7 +1410,11 @@ void I_Update (void)
 //
 // blit screen to video
 //
+#if !defined(FH_DIRECT) && !defined(FH_BACKBUF)
 	if(DisplayTicker)
+#else
+	if(0)
+#endif
 	{
 		if(screenblocks > 9 || UpdateState&(I_FULLSCRN|I_MESSAGES))
 		{
@@ -1433,9 +1444,31 @@ void I_Update (void)
 
 	//memset(pcscreen, 255, SCREENHEIGHT*SCREENWIDTH);
 
+#ifdef FH_DIRECT
+	FHY_Update();
+	return;
+#endif
+#ifdef FH_VBR
+	if(fhe_pitch != SCREENWIDTH)
+	{ // odd line length: copy everything
+		if(UpdateState != I_NOUPDATE)
+			FHE_CopyRows(pcscreen, screen, 0, SCREENHEIGHT);
+		UpdateState = I_NOUPDATE;
+		return;
+	}
+#endif
+#ifdef FH_BACKBUF
+	FHV_Update();
+	return;
+#endif
 	if(UpdateState == I_NOUPDATE)
 	{
 		return;
+	}
+	if(fh_vsync)
+	{ // FastHexen: wait for the start of vertical retrace
+		while(inp(0x3da)&8);
+		while(!(inp(0x3da)&8));
 	}
 	if(UpdateState&I_FULLSCRN)
 	{
@@ -1495,9 +1528,18 @@ void I_InitGraphics(void)
 #if (APPVER_HEXENREV < AV_HR_HEX11A)
 	grmode = true;
 #endif
+#if defined(FH_DIRECT)
+	FHY_InitGraphics();
+#elif defined(FH_VBR)
+	FHE_Init(SCREENWIDTH, SCREENHEIGHT, 1);
+	pcscreen = destscreen = fhe_lfb;
+#elif defined(FH_BACKBUF)
+	FHV_Init();
+#else
 	regs.w.ax = 0x13;
 	int386(0x10, (const union REGS *)&regs, &regs);
 	pcscreen = destscreen = (byte *)0xa0000;
+#endif
 	I_SetPalette(W_CacheLumpName("PLAYPAL", PU_CACHE));
 }
 
@@ -1762,7 +1804,13 @@ _outbyte(PEL_DATA,b);
 
 int I_TimerISR (void)
 {
-	ticcount++;
+	if (fh_uncapnow)
+	{ // 560 Hz: 16 per tic
+		if ((++ticcount_hr & 15) == 0)
+			ticcount++;
+	}
+	else
+		ticcount++;
 	return 0;
 }
 
@@ -1786,12 +1834,21 @@ int lastpress;
 ================
 */
 
+int fh_xtkbd;     // -xt: PC/XT keyboard needs a manual acknowledge
+
 void __interrupt I_KeyboardISR (void)
 {
 // Get the scan code
 
 	keyboardque[kbdhead&(KBDQUESIZE-1)] = lastpress = _inbyte(0x60);
 	kbdhead++;
+
+	if (fh_xtkbd)
+	{ // pulse port 61h bit 7 to clear the XT keyboard
+		int t = _inbyte(0x61);
+		_outbyte(0x61, t | 0x80);
+		_outbyte(0x61, t);
+	}
 
 // acknowledge the interrupt
 
@@ -1811,6 +1868,7 @@ void __interrupt I_KeyboardISR (void)
 void I_StartupKeyboard (void)
 {
 #ifndef NOKBD
+	fh_xtkbd = M_CheckParm("-xt");
 	oldkeyboardisr = _dos_getvect(KEYBOARDINT);
 	_dos_setvect (0x8000 | KEYBOARDINT, I_KeyboardISR);
 #endif
@@ -2447,6 +2505,17 @@ byte *I_ZoneBase (int *size)
 #else
 	ST_Message ("  DPMI memory: 0x%x, ",heap);
 	ST_Message ("Maxzone: 0x%x\n", maxzone);
+	{ // FastHexen: -limitram KB caps the zone, -freeram KB leaves memory free
+		int i;
+		if (RENDERWIDTH > 320 && maxzone == 0x800000)
+			maxzone += RENDERWIDTH*RENDERHEIGHT*2;
+		i = M_CheckParm("-limitram");
+		if (i && i < myargc - 1 && atoi(myargv[i + 1]) > 0)
+			maxzone = atoi(myargv[i + 1]) * 1024;
+		i = M_CheckParm("-freeram");
+		if (i && i < myargc - 1)
+			heap -= atoi(myargv[i + 1]) * 1024;
+	}
 
 	do
 	{

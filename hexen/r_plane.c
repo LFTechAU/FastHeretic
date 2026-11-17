@@ -50,23 +50,23 @@ short openings[MAXOPENINGS], *lastopening;
 // Clip values are the solid pixel bounding the range.
 // floorclip start out SCREENHEIGHT
 // ceilingclip starts out -1
-short floorclip[SCREENWIDTH];
-short ceilingclip[SCREENWIDTH];
+short floorclip[RENDERWIDTH];
+short ceilingclip[RENDERWIDTH];
 
 // spanstart holds the start of a plane span, initialized to 0
-int spanstart[SCREENHEIGHT];
-int spanstop[SCREENHEIGHT];
+int spanstart[RENDERHEIGHT];
+int spanstop[RENDERHEIGHT];
 
 // Texture mapping
 lighttable_t **planezlight;
 fixed_t planeheight;
-fixed_t yslope[SCREENHEIGHT];
-fixed_t distscale[SCREENWIDTH];
+fixed_t yslope[RENDERHEIGHT];
+fixed_t distscale[RENDERWIDTH];
 fixed_t basexscale, baseyscale;
-fixed_t cachedheight[SCREENHEIGHT];
-fixed_t cacheddistance[SCREENHEIGHT];
-fixed_t cachedxstep[SCREENHEIGHT];
-fixed_t cachedystep[SCREENHEIGHT];
+fixed_t cachedheight[RENDERHEIGHT];
+fixed_t cacheddistance[RENDERHEIGHT];
+fixed_t cachedxstep[RENDERHEIGHT];
+fixed_t cachedystep[RENDERHEIGHT];
 
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
 
@@ -139,6 +139,19 @@ void R_MapPlane(int y, int x1, int x2)
 		I_Error("R_MapPlane: %i, %i at %i", x1, x2, y);
 	}
 #endif
+#ifdef FH_MODEYH
+	if ((y + viewwindowy) & 1)
+		return;     // half height: odd screen lines are not drawn
+#endif
+
+	if (fh_flatsurfaces == 2)
+	{ // FastHexen: one colour per plane, no distance shading
+		ds_y = y;
+		ds_x1 = x1;
+		ds_x2 = x2;
+		spanfunc ();
+		return;
+	}
 
 	if(planeheight != cachedheight[y])
 	{
@@ -154,10 +167,13 @@ void R_MapPlane(int y, int x1, int x2)
 		ds_ystep = cachedystep[y];
 	}
 	
-	length = FixedMul(distance, distscale[x1]);
-	angle = (viewangle+xtoviewangle[x1])>>ANGLETOFINESHIFT;
-	ds_xfrac = viewx+FixedMul(finecosine[angle], length);
-	ds_yfrac = -viewy-FixedMul(finesine[angle], length);
+	if (!fh_flatsurfaces)
+	{
+		length = FixedMul(distance, distscale[x1]);
+		angle = (viewangle+xtoviewangle[x1])>>ANGLETOFINESHIFT;
+		ds_xfrac = viewx+FixedMul(finecosine[angle], length);
+		ds_yfrac = -viewy-FixedMul(finesine[angle], length);
+	}
 
 	if(fixedcolormap)
 	{
@@ -257,7 +273,7 @@ visplane_t *R_FindPlane(fixed_t height, int picnum,
 	check->picnum = picnum;
 	check->lightlevel = lightlevel;
 	check->special = special;
-	check->minx = SCREENWIDTH;
+	check->minx = RENDERWIDTH;
 	check->maxx = -1;
 	memset(check->top, 0xff, sizeof(check->top));
 	return(check);
@@ -298,7 +314,7 @@ visplane_t *R_CheckPlane(visplane_t *pl, int start, int stop)
 
 	for(x = intrl; x <= intrh; x++)
 	{
-		if(pl->top[x] != 0xff)
+		if(pl->top[x] != VPNONE)
 		{
 			break;
 		}
@@ -362,6 +378,8 @@ void R_MakeSpans(int x, int t1, int b1, int t2, int b2)
 
 #define SKYTEXTUREMIDSHIFTED 200
 
+static int lastskytexture = -1;
+
 void R_DrawPlanes(void)
 {
 	visplane_t *pl;
@@ -407,87 +425,66 @@ void R_DrawPlanes(void)
 		}
 		if(pl->picnum == skyflatnum)
 		{ // Sky flat
+			// FastHexen: columns go through skycolfunc so every detail
+			// level and video mode can draw them. A double sky is merged
+			// into one column first.
 			if(DoubleSky)
 			{ // Render 2 layers, sky 1 in front
 				offset = Sky1ColumnOffset>>16;
 				skyTexture = texturetranslation[Sky1Texture];
 				offset2 = Sky2ColumnOffset>>16;
 				skyTexture2 = texturetranslation[Sky2Texture];
-				for(x = pl->minx; x <= pl->maxx; x++)
-				{
-					dc_yl = pl->top[x];
-					dc_yh = pl->bottom[x];
-					if(dc_yl <= dc_yh)
-					{
-						count = dc_yh-dc_yl;
-						if(count < 0)
-						{
-							return;
-						}
-						angle = (viewangle+xtoviewangle[x])
-							>>ANGLETOSKYSHIFT;
-						source = R_GetColumn(skyTexture, angle+offset)
-							+SKYTEXTUREMIDSHIFTED+(dc_yl-centery);
-						source2 = R_GetColumn(skyTexture2, angle+offset2)
-							+SKYTEXTUREMIDSHIFTED+(dc_yl-centery);
-						dest = ylookup[dc_yl]+columnofs[x];
-						do
-						{
-							if(*source)
-							{
-								*dest = *source++;
-								source2++;
-							}
-							else
-							{
-								*dest = *source2++;
-								source++;
-							}
-							dest += SCREENWIDTH;
-						} while(count--);
-					}
-				}
-				continue; // Next visplane
+			}
+			else if(pl->special == 200)
+			{ // Use sky 2
+				offset = Sky2ColumnOffset>>16;
+				skyTexture = texturetranslation[Sky2Texture];
 			}
 			else
-			{ // Render single layer
-				if(pl->special == 200)
-				{ // Use sky 2
-					offset = Sky2ColumnOffset>>16;
-					skyTexture = texturetranslation[Sky2Texture];
-				}
-				else
-				{ // Use sky 1
-					offset = Sky1ColumnOffset>>16;
-					skyTexture = texturetranslation[Sky1Texture];
-				}
-				for(x = pl->minx; x <= pl->maxx; x++)
+			{ // Use sky 1
+				offset = Sky1ColumnOffset>>16;
+				skyTexture = texturetranslation[Sky1Texture];
+			}
+			if (fh_flatsky && skyTexture != lastskytexture)
+			{
+				lastskytexture = skyTexture;
+				R_ComputeSkyColor (DoubleSky ? skyTexture2 : skyTexture);
+			}
+			dc_iscale = skyiscale;
+			dc_colormap = colormaps;
+			dc_texturemid = skytexturemid;
+			for(x = pl->minx; x <= pl->maxx; x++)
+			{
+				dc_yl = pl->top[x];
+				dc_yh = pl->bottom[x];
+				if(dc_yl <= dc_yh)
 				{
-					dc_yl = pl->top[x];
-					dc_yh = pl->bottom[x];
-					if(dc_yl <= dc_yh)
+					dc_x = x;
+					if (!fh_flatsky)
 					{
-						count = dc_yh-dc_yl;
-						if(count < 0)
-						{
-							return;
-						}
 						angle = (viewangle+xtoviewangle[x])
 							>>ANGLETOSKYSHIFT;
-						source = R_GetColumn(skyTexture, angle+offset)
-							+SKYTEXTUREMIDSHIFTED+(dc_yl-centery);
-						dest = ylookup[dc_yl]+columnofs[x];
-						do
+						source = R_GetColumn(skyTexture, angle+offset);
+						if (DoubleSky)
 						{
-							*dest = *source++;
-							dest += SCREENWIDTH;
-						} while(count--);
+							source2 = R_GetColumn(skyTexture2,
+								angle+offset2);
+							source = R_MergeSkyColumn(source, source2);
+						}
+						dc_source = source;
 					}
+					skycolfunc ();
 				}
-				continue; // Next visplane
 			}
+			continue; // Next visplane
 		}
 		// Regular flat
+		if (fh_flatsurfaces)
+		{
+			ds_flatcolor = R_FlatColor(flattranslation[pl->picnum]);
+			tempSource = NULL;
+		}
+		else
 		tempSource = W_CacheLumpNum(firstflat+
 			flattranslation[pl->picnum], PU_STATIC);
 		scrollOffset = leveltime>>1&63;
@@ -544,9 +541,12 @@ void R_DrawPlanes(void)
 			light = 0;
 		}
 		planezlight = zlight[light];
+		if (fh_flatsurfaces == 2)
+			ds_colormap = fixedcolormap ? fixedcolormap
+				: planezlight[MAXLIGHTZ/4];
 
-		pl->top[pl->maxx+1] = 0xff;
-		pl->top[pl->minx-1] = 0xff;
+		pl->top[pl->maxx+1] = VPNONE;
+		pl->top[pl->minx-1] = VPNONE;
 
 		stop = pl->maxx+1;
 		for(x = pl->minx; x <= stop; x++)
@@ -554,6 +554,7 @@ void R_DrawPlanes(void)
 			R_MakeSpans(x, pl->top[x-1], pl->bottom[x-1],
 				pl->top[x], pl->bottom[x]);
 		}
-		Z_ChangeTag(tempSource, PU_CACHE);
+		if (tempSource)
+			Z_ChangeTag(tempSource, PU_CACHE);
 	}
 }

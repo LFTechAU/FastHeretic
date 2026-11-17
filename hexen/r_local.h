@@ -17,8 +17,8 @@
 
 #define BASEYCENTER                     100
 
-#define MAXWIDTH                        1120
-#define MAXHEIGHT                       832
+#define MAXWIDTH			(RENDERWIDTH > 1120 ? RENDERWIDTH : 1120)
+#define	MAXHEIGHT			(RENDERHEIGHT > 832 ? RENDERHEIGHT : 832)
 
 #define PI                                      3.141592657
 
@@ -34,7 +34,7 @@
 #define LIGHTLEVELS                     16
 #define LIGHTSEGSHIFT           4
 #define MAXLIGHTSCALE           48
-#define LIGHTSCALESHIFT         12
+#define	LIGHTSCALESHIFT		(12+FH_LSE)
 #define MAXLIGHTZ                       128
 #define LIGHTZSHIFT                     20
 #define NUMCOLORMAPS            32              // number of diminishing
@@ -194,7 +194,16 @@ typedef struct
 typedef byte    lighttable_t;           // this could be wider for >8 bit display
 
 #define MAXVISPLANES    160
-#define MAXOPENINGS             SCREENWIDTH*64
+
+// FastHeretic: views taller than 255 rows need 16 bit plane edges
+#if RENDERHEIGHT > 254
+typedef unsigned short vptop_t;
+#define VPNONE 0xffff
+#else
+typedef byte vptop_t;
+#define VPNONE 0xff
+#endif
+#define	MAXOPENINGS		RENDERWIDTH*64
 
 typedef struct
 {
@@ -203,12 +212,12 @@ typedef struct
 	int                     lightlevel;
 	int                     special;
 	int                     minx, maxx;
-	byte            pad1;                                           // leave pads for [minx-1]/[maxx+1]
-	byte            top[SCREENWIDTH];
-	byte            pad2;
-	byte            pad3;
-	byte            bottom[SCREENWIDTH];
-	byte            pad4;
+	vptop_t		pad1;						// leave pads for [minx-1]/[maxx+1]
+	vptop_t		top[RENDERWIDTH];
+	vptop_t		pad2;
+	vptop_t		pad3;
+	vptop_t		bottom[RENDERWIDTH];
+	vptop_t		pad4;
 } visplane_t;
 
 typedef struct drawseg_s
@@ -311,7 +320,7 @@ extern  player_t        *viewplayer;
 extern  angle_t         clipangle;
 
 extern  int                     viewangletox[FINEANGLES/2];
-extern  angle_t         xtoviewangle[SCREENWIDTH+1];
+extern	angle_t		xtoviewangle[RENDERWIDTH+1];
 extern  fixed_t         finetangent[FINEANGLES/2];
 
 extern  fixed_t         rw_distance;
@@ -402,11 +411,11 @@ extern  int                     skyflatnum;
 
 extern  short                   openings[MAXOPENINGS], *lastopening;
 
-extern  short           floorclip[SCREENWIDTH];
-extern  short           ceilingclip[SCREENWIDTH];
+extern	short		floorclip[RENDERWIDTH];
+extern	short		ceilingclip[RENDERWIDTH];
 
-extern  fixed_t         yslope[SCREENHEIGHT];
-extern  fixed_t         distscale[SCREENWIDTH];
+extern	fixed_t		yslope[RENDERHEIGHT];
+extern	fixed_t		distscale[RENDERWIDTH];
 
 void R_InitPlanes (void);
 void R_ClearPlanes (void);
@@ -465,8 +474,8 @@ extern  vissprite_t     vissprites[MAXVISSPRITES], *vissprite_p;
 extern  vissprite_t     vsprsortedhead;
 
 // constant arrays used for psprite clipping and initializing clipping
-extern  short   negonearray[SCREENWIDTH];
-extern  short   screenheightarray[SCREENWIDTH];
+extern	short	negonearray[RENDERWIDTH];
+extern	short	screenheightarray[RENDERWIDTH];
 
 // vars for R_DrawMaskedColumn
 extern  short           *mfloorclip;
@@ -533,6 +542,8 @@ void    R_DrawSpanLow (void);
 
 void    R_InitBuffer (int width, int height);
 void    R_InitTranslationTables (void);
+
+#include "r_fh.h"
 
 #endif          // __R_LOCAL__
 

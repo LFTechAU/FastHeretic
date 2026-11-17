@@ -52,7 +52,7 @@ typedef struct
 	int     first, last;
 } cliprange_t;
 
-#define MAXSEGS 32
+#define	MAXSEGS	(RENDERWIDTH/2+1)
 
 cliprange_t     solidsegs[MAXSEGS], *newend;    // newend is one past the last valid seg
 

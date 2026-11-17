@@ -32,6 +32,10 @@ int fh_fixdac;           // wait for retrace before palette changes
 byte skyflatcolor;
 
 void (*skycolfunc)(void);
+#ifdef FH_HEXEN
+void (*altfuzzcolfunc)(void);
+void R_DrawAltFuzzColumn(void);
+#endif
 
 //==========================================================================
 // Pixel writers for each detail level
@@ -93,14 +97,24 @@ MAKE_TRANSCOLUMN(R_DrawTranslatedColumnPotato, 2, PUT4)
 // Translucent (tinttable) columns
 //--------------------------------------------------------------------------
 
-#define MAKE_FUZZCOLUMN(NAME, SHIFT, PUT) \
+// Heretic (and Hexen's "alt" ghosts) index the tint table by
+// screen colour * 256 + sprite colour, Hexen's normal ghosts the other way
+#ifdef FH_HEXEN
+#define FUZZIDX(d,c) ((d) + ((c) << 8))
+#else
+#define FUZZIDX(d,c) (((d) << 8) + (c))
+#endif
+#define ALTFUZZIDX(d,c) (((d) << 8) + (c))
+
+#define MAKE_FUZZCOLUMN(NAME, SHIFT, PUT) MAKE_FUZZCOLUMNX(NAME, SHIFT, PUT, FUZZIDX)
+#define MAKE_FUZZCOLUMNX(NAME, SHIFT, PUT, IDX) \
 void NAME(void) \
 { \
 	COLUMN_SETUP(SHIFT) \
 	do \
 	{ \
-		PUT(dest, tinttable[((*dest) << 8) + \
-			dc_colormap[dc_source[(frac >> FRACBITS) & 127]]]); \
+		PUT(dest, tinttable[IDX(*dest, \
+			dc_colormap[dc_source[(frac >> FRACBITS) & 127]])]); \
 		dest += RENDERWIDTH; \
 		frac += fracstep; \
 	} while (count--); \
@@ -153,6 +167,10 @@ MAKE_FUZZCOLUMN(R_DrawFuzzColumnLow, 1, PUT2)
 MAKE_FUZZCOLUMN(R_DrawFuzzColumnPotato, 2, PUT4)
 MAKE_TRANSFUZZCOLUMN(R_DrawTranslatedFuzzColumnLow, 1, PUT2)
 MAKE_TRANSFUZZCOLUMN(R_DrawTranslatedFuzzColumnPotato, 2, PUT4)
+#ifdef FH_HEXEN
+MAKE_FUZZCOLUMNX(R_DrawAltFuzzColumnLow, 1, PUT2, ALTFUZZIDX)
+MAKE_FUZZCOLUMNX(R_DrawAltFuzzColumnPotato, 2, PUT4, ALTFUZZIDX)
+#endif
 
 //--------------------------------------------------------------------------
 // Sky columns (no colour mapping, 1:1 vertical scale)
@@ -321,7 +339,11 @@ byte R_FlatColor(int flatnum)
 	return flatcolors[flatnum];
 }
 
+#ifdef FH_HEXEN
+void R_ComputeSkyColor(int skytexture)
+#else
 void R_ComputeSkyColor(void)
+#endif
 {
 	byte *palette;
 	byte *column;
@@ -343,6 +365,34 @@ void R_ComputeSkyColor(void)
 	skyflatcolor = BestColor(r / n, g / n, b / n, palette);
 }
 
+#ifdef FH_HEXEN
+// Hexen's double sky: sky 1 in front, its colour 0 shows sky 2 behind.
+// Merge the rows this column will read into one column for skycolfunc.
+byte *R_MergeSkyColumn(byte *front, byte *back)
+{
+	static byte merged[1024];
+	fixed_t step;
+	int lo, hi, r;
+
+#ifdef FH_HIRES
+	step = FH_SKYISCALE;
+#else
+	step = FRACUNIT;
+#endif
+	lo = (dc_texturemid + (dc_yl - centery) * step) >> FRACBITS;
+	hi = (dc_texturemid + (dc_yh - centery) * step) >> FRACBITS;
+#ifdef FH_HIRES
+	if (lo < 0) lo = 0;
+	if (hi > 199) hi = 199;
+#endif
+	if (lo < 0) lo = 0;
+	if (hi > 1023) hi = 1023;
+	for (r = lo; r <= hi; r++)
+		merged[r] = front[r] ? front[r] : back[r];
+	return merged;
+}
+
+#endif
 //==========================================================================
 // Pick drawers for the current detail level and options
 //==========================================================================
@@ -392,6 +442,20 @@ void R_FH_SetDrawers(void)
 		skycolfunc = fh_flatsky ? R_DrawSkyFlatPotato : R_DrawSkyColumnPotato;
 		break;
 	}
+#ifdef FH_HEXEN
+	switch (detailshift)
+	{
+	case 0:
+		altfuzzcolfunc = (fh_notrans == 1) ? colfunc : R_DrawAltFuzzColumn;
+		break;
+	case 1:
+		altfuzzcolfunc = (fh_notrans == 1) ? colfunc : R_DrawAltFuzzColumnLow;
+		break;
+	default:
+		altfuzzcolfunc = (fh_notrans == 1) ? colfunc : R_DrawAltFuzzColumnPotato;
+		break;
+	}
+#endif
 	if (fh_notrans == 2)
 	{
 		switch (detailshift)
@@ -409,6 +473,9 @@ void R_FH_SetDrawers(void)
 			transfuzzcolfunc = R_DrawSaturnTransColumnPotato;
 			break;
 		}
+#ifdef FH_HEXEN
+		altfuzzcolfunc = fuzzcolfunc;
+#endif
 	}
 	if (fh_flatsurfaces)
 		spanfunc = R_DrawSpanFlat;
@@ -449,6 +516,10 @@ static void FH_CPUDrawers(void)
 	{
 		if (fuzzcolfunc == colfunc)
 			fuzzcolfunc = c;
+#ifdef FH_HEXEN
+		if (altfuzzcolfunc == colfunc)
+			altfuzzcolfunc = c;
+#endif
 		colfunc = basecolfunc = c;
 	}
 }

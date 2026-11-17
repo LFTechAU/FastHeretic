@@ -14,6 +14,7 @@
 
 #include "h2def.h"
 #include "p_local.h"
+#include "r_local.h"
 #include <stdlib.h> // for atoi()
 
 #define NCMD_EXIT               0x80000000
@@ -952,4 +953,39 @@ if (debugfile)
 		}
 		NetUpdate ();                                   // check for new console commands
 	}
+}
+
+/*
+===============
+=
+= FH_TryRunTicsUncapped
+=
+= FastHexen: run the tics that are due (maybe none) and set how far
+= the next frame is into the current tic. Single player only.
+=
+===============
+*/
+
+void FH_TryRunTicsUncapped (void)
+{
+	int i, lowtic;
+
+	NetUpdate ();
+	lowtic = MAXINT;
+	for (i=0 ; i<doomcom->numnodes ; i++)
+		if (nodeingame[i] && nettics[i] < lowtic)
+			lowtic = nettics[i];
+	while (gametic < lowtic)
+	{
+		FH_SaveInterpolation ();
+		if (advancedemo)
+			H2_DoAdvanceDemo ();
+		MN_Ticker ();
+		G_Ticker ();
+		gametic++;
+		NetUpdate ();
+		if (gamestate != GS_LEVEL)
+			break;
+	}
+	fh_interpweight = (ticcount_hr & 15) << 12;
 }

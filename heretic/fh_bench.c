@@ -174,7 +174,15 @@ static void StartRun(void)
 	episode = *demo_p++;
 	map = *demo_p++;
 	for (i = 0; i < MAXPLAYERS; i++)
+	{
 		playeringame[i] = *demo_p++;
+#ifdef FH_HEXEN
+		PlayerClass[i] = *demo_p++;
+#endif
+	}
+#ifdef FH_HEXEN
+	G_StartNewInit();
+#endif
 	G_InitNew(skill, episode, map);     // also sets starttime
 	usergame = false;
 	demoplayback = true;

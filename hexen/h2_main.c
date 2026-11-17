@@ -14,6 +14,7 @@
 
 #ifdef __WATCOMC__
 #include <dos.h>
+#include <conio.h>
 #include <sys/types.h>
 #include <direct.h>
 #endif
@@ -23,6 +24,8 @@
 #include "h2def.h"
 #include "p_local.h"
 #include "soundst.h"
+#include "r_local.h"
+#include "fh_cpu.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -169,6 +172,124 @@ static execOpt_t ExecOptions[] =
 //==========================================================================
 void InitMapMusicInfo(void);
 
+//---------------------------------------------------------------------------
+//
+// FastHexen: frame rate counter and benchmark screenshots
+//
+//---------------------------------------------------------------------------
+
+static int fps_frames;
+static int fps_lasttic;
+static int fps_value;
+static int fh_debugcard;            // -debugCard2 / -debugCard4: FPS on a POST card
+static int fh_debugport = 0x80;
+static int fh_shottic = -1;
+static int fh_shotmenu = 0;
+static int fh_quittic = -1;         // -fhquit tic: test runs, quit with frame count
+static int fh_quitframes, fh_quitstart;
+extern void MN_FHShowMenu(int which);
+
+extern void MN_DrTextA(char *text, int x, int y);
+extern int MN_TextAWidth(char *text);
+extern void M_ScreenShot(void);
+extern int ticcount;
+
+static void FH_DrawFPS(void)
+{
+	char text[8];
+	int tics;
+
+	fps_frames++;
+	tics = ticcount - fps_lasttic;
+	if (tics >= 35)
+	{
+		fps_value = fps_frames * 35 / tics;
+		fps_frames = 0;
+		fps_lasttic = ticcount;
+	}
+	if (fh_debugcard)
+	{ // show the frame rate in BCD on the POST code display
+		int v = fps_value, out;
+		if (fh_debugcard == 2)
+		{
+			if (v > 99) v = 99;
+			out = ((v / 10) << 4) | (v % 10);
+			outp(fh_debugport, out);
+		}
+		else
+		{
+			if (v > 9999) v = 9999;
+			out = ((v / 1000) << 12) | (((v / 100) % 10) << 8)
+				| (((v / 10) % 10) << 4) | (v % 10);
+			outpw(fh_debugport, out);
+		}
+	}
+	if (fh_showfps)
+	{
+		sprintf(text, "%d", fps_value);
+		MN_DrTextA(text, FH_VIRTX(viewwindowx + scaledviewwidth) - MN_TextAWidth(text) - 4,
+			FH_VIRTY(viewwindowy) + 2);
+	}
+}
+
+static void FH_Options(void)
+{
+	int p;
+
+	// FastHexen command line options (override HEXEN.CFG)
+	if (M_CheckParm("-high")) fh_detail = 0;
+	if (M_CheckParm("-low")) fh_detail = 1;
+	if (M_CheckParm("-potato")) fh_detail = 2;
+	if (fh_detail < 0 || fh_detail > 2) fh_detail = 0;
+	FH_InitCPU();
+	ST_Message("CPU: %s%s\n", fh_cpunames[fh_cpusel],
+		fh_cpu == CPU_AUTO ? " (detected)" : "");
+	if (M_CheckParm("-flatsurfaces")) fh_flatsurfaces = 1;
+	if (M_CheckParm("-flatterSpan")) fh_flatsurfaces = 1;
+	if (M_CheckParm("-flatSpan")) fh_flatsurfaces = 2;
+	if (M_CheckParm("-defSpan")) fh_flatsurfaces = 0;
+	if (M_CheckParm("-defSky")) fh_flatsky = 0;
+	if (M_CheckParm("-flatInv")) fh_notrans = 1;
+	if (M_CheckParm("-saturn")) fh_notrans = 2;
+	if (M_CheckParm("-translucent") || M_CheckParm("-defInv")) fh_notrans = 0;
+	if (M_CheckParm("-near")) fh_near = 1;
+	if (M_CheckParm("-far")) fh_near = 0;
+	if (M_CheckParm("-vsync")) fh_vsync = 1;
+	if (M_CheckParm("-fixDAC")) fh_fixdac = 1;
+	if (M_CheckParm("-debugCard2")) fh_debugcard = 2;
+	if (M_CheckParm("-debugCard4")) fh_debugcard = 4;
+	p = M_CheckParm("-debugPort");
+	if (p && p < myargc - 1)
+		sscanf(myargv[p + 1], "%x", &fh_debugport);
+	if (M_CheckParm("-novsync")) fh_vsync = 0;
+	if (M_CheckParm("-nofps")) fh_showfps = 0;
+	if (M_CheckParm("-csv")) fh_csv = 1;
+	p = M_CheckParm("-size");
+	if (p && p < myargc-1)
+	{
+		extern int screenblocks;
+		screenblocks = atoi(myargv[p+1]);
+		if (screenblocks < 3) screenblocks = 3;
+		if (screenblocks > 11) screenblocks = 11;
+	}
+	if (fh_flatsurfaces < 0 || fh_flatsurfaces > 2) fh_flatsurfaces = 0;
+	if (fh_notrans < 0 || fh_notrans > 2) fh_notrans = 0;
+	if (M_CheckParm("-flatsky")) fh_flatsky = 1;
+	if (M_CheckParm("-notrans")) fh_notrans = 1;
+	if (M_CheckParm("-fps")) fh_showfps = 1;
+	if (M_CheckParm("-uncapped")) fh_uncapped = 1;
+	if (M_CheckParm("-capped")) fh_uncapped = 0;
+	p = M_CheckParm("-fhshot");
+	if (p && p < myargc-1)
+		fh_shottic = atoi(myargv[p+1]);
+	p = M_CheckParm("-fhquit");
+	if (p && p < myargc-1)
+		fh_quittic = atoi(myargv[p+1]);
+	p = M_CheckParm("-fhmenu");
+	if (p && p < myargc-1)
+		fh_shotmenu = atoi(myargv[p+1]);
+}
+
 void H2_Main(void)
 {
 	int p;
@@ -198,12 +319,14 @@ void H2_Main(void)
 #endif
 	// Initialize subsystems
 
+	ST_Message(FH_BANNER);
 	ST_Message("V_Init: allocate screens.\n");
 	V_Init();
 
 	// Load defaults before initing other systems
 	ST_Message("M_LoadDefaults: Load system defaults.\n");
 	M_LoadDefaults(CONFIG_FILE_NAME);
+	FH_Options();
 
 	// Now that the savedir is loaded from .CFG, make sure it exists
 	CreateSavePath();
@@ -316,6 +439,12 @@ void H2_Main(void)
 	if(p && p < myargc-1)
 	{
 		G_TimeDemo(myargv[p+1]);
+		H2_GameLoop(); // Never returns
+	}
+
+	if (FH_BenchInit())
+	{ // FastHexen -bench FILE.BNC [demo]
+		FH_BenchStart();
 		H2_GameLoop(); // Never returns
 	}
 
@@ -587,6 +716,8 @@ void H2_GameLoop(void)
 	I_InitGraphics();
 	while(1)
 	{
+		if (fh_benchnext)
+			FH_BenchNext();     // FastHexen -bench: next run
 		// Frame syncronous IO operations
 		I_StartFrame();
 
@@ -604,8 +735,14 @@ void H2_GameLoop(void)
 			gametic++;
 			maketic++;
 		}
+		else if (fh_uncapped && gamestate == GS_LEVEL && !netgame)
+		{ // FastHexen: draw frames between tics
+			FH_SetUncapped(1);
+			FH_TryRunTicsUncapped();
+		}
 		else
 		{
+			FH_SetUncapped(0);
 			// Will run at least one tic
 			TryRunTics();
 		}
@@ -618,6 +755,7 @@ void H2_GameLoop(void)
 #endif
 
 		DrawAndBlit();
+		FH_BenchFrame();
 	}
 }
 
@@ -670,6 +808,10 @@ void H2_PostEvent(event_t *ev)
 
 static void DrawAndBlit(void)
 {
+#ifdef FH_DIRECT
+	extern int screenblocks;
+	extern int InfoType;
+#endif
 	// Change the view size if needed
 	if(setsizeneeded)
 	{
@@ -690,8 +832,30 @@ static void DrawAndBlit(void)
 			}
 			else
 			{
+				FH_InterpolateBegin();
 				R_RenderPlayerView(&players[displayplayer]);
+				FH_InterpolateEnd();
+				if (fh_usedmmx)
+					FH_EMMS();      // MMX drawers ran: free the FPU again
 			}
+#ifdef FH_DIRECT
+			if (!automapactive && !(MenuActive && InfoType) && FHY_Direct())
+			{ // view is in the page already: status bar, border, then overlays
+				fh_directframe = 1;
+				if (screenblocks > 10)
+					FHY_OverlayOn();
+				fhy_sbmode = 1;
+				SB_Drawer();
+				fhy_sbmode = 0;
+				FHY_OverlayOff();
+				FHY_Composite();
+				FHY_OverlayOn();
+				FH_DrawFPS();
+				CT_Drawer();
+				break;
+			}
+#endif
+			FH_DrawFPS();
 			CT_Drawer();
 			UpdateState |= I_FULLVIEW;
 			SB_Drawer();
@@ -711,7 +875,7 @@ static void DrawAndBlit(void)
 	{
 		if(!netgame)
 		{
-			V_DrawPatch(160, viewwindowy+5, W_CacheLumpName("PAUSED",
+			V_DrawPatch(160, FH_VIRTY(viewwindowy)+5, W_CacheLumpName("PAUSED",
 				PU_CACHE));
 		}
 		else
@@ -724,8 +888,39 @@ static void DrawAndBlit(void)
 	// Draw current message
 	DrawMessage();
 
+	if (fh_quittic >= 0 && gamestate == GS_LEVEL)
+	{
+		if (!fh_quitframes++)
+			fh_quitstart = ticcount;
+		if (gametic >= fh_quittic)
+		{
+			FILE *f = fopen("FHQUIT.TXT", "w");
+			int t = ticcount - fh_quitstart;
+			fprintf(f, "%d frames in %d tics: %d.%02d fps\n", fh_quitframes, t,
+				fh_quitframes * 35 / t, (fh_quitframes * 3500 / t) % 100);
+			fclose(f);
+			I_Quit();
+		}
+	}
+	if (fh_shottic >= 0 && gametic == fh_shottic && gamestate == GS_LEVEL)
+	{
+		if (fh_shotmenu)
+			MN_FHShowMenu(fh_shotmenu);
+		MN_Drawer();
+#ifdef FH_DIRECT
+		if (fh_directframe)
+			FHY_ReadPage();
+#endif
+		M_ScreenShot ();
+		players[consoleplayer].messageTics = 0;
+		fh_shottic = -1;
+	}
+
 	// Draw Menu
 	MN_Drawer();
+#ifdef FH_DIRECT
+	FHY_OverlayOff();
+#endif
 
 	// Send out any new accumulation
 	NetUpdate();
@@ -954,7 +1149,7 @@ void CleanExit(void)
 	I_ShutdownKeyboard();
 	regs.x.eax = 0x3;
 	int386(0x10, &regs, &regs);
-	printf("Exited from HEXEN: Beyond Heretic.\n");
+	printf("Exited from FastHexen.\n");
 	exit(1);
 }
 #endif

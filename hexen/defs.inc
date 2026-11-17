@@ -2,8 +2,13 @@ SKIPPRIMITIVES	=  0			; set to 1 to skip unwound drawing
 
 
 SCREEN  =       0a0000h
+IFDEF FHRW
+SCREENWIDTH     =   FHRW
+SCREENHEIGHT	=	FHRH
+ELSE
 SCREENWIDTH     =   320
 SCREENHEIGHT	=	200
+ENDIF
 PLANEWIDTH		=	80
 PLANESIZE		=	80*200
 
@@ -21,7 +26,6 @@ OP_MOVDEST	= 	088h
 	.DATA
 
 EXTRN	_dc_colormap:DWORD
-EXTRN _tinttable:DWORD
 EXTRN	_dc_x:DWORD
 EXTRN	_dc_yl:DWORD
 EXTRN	_dc_yh:DWORD
@@ -42,6 +46,7 @@ EXTRN	_ds_yfrac:DWORD
 EXTRN	_ds_xstep:DWORD
 EXTRN	_ds_ystep:DWORD
 EXTRN	_ds_source:DWORD
+EXTRN _tinttable:DWORD
 
 PUSHR	MACRO
 	pushad

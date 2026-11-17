@@ -43,8 +43,8 @@ fixed_t		pspritescale, pspriteiscale;
 lighttable_t	**spritelights;
 
 // constant arrays used for psprite clipping and initializing clipping
-short	negonearray[SCREENWIDTH];
-short	screenheightarray[SCREENWIDTH];
+short	negonearray[RENDERWIDTH];
+short	screenheightarray[RENDERWIDTH];
 
 boolean LevelUseFullBright;
 /*
@@ -127,7 +127,7 @@ void R_InstallSpriteLump (int lump, unsigned frame, unsigned rotation, boolean f
 = Pass a null terminated list of sprite names (4 chars exactly) to be used
 = Builds the sprite rotation matrixes to account for horizontally flipped
 = sprites.  Will report an error if the lumps are inconsistant
-=Only called at startup
+= Only called at startup
 =
 = Sprite lump names are 4 characters for the actor, a letter for the frame,
 = and a number for the rotation, A sprite that is flippable will have an
@@ -253,7 +253,7 @@ void R_InitSprites (char **namelist)
 {
 	int		i;
 
-	for (i=0 ; i<SCREENWIDTH ; i++)
+	for (i=0 ; i<RENDERWIDTH ; i++)
 	{
 		negonearray[i] = -1;
 	}
@@ -377,7 +377,7 @@ void R_DrawVisSprite (vissprite_t *vis, int x1, int x2)
 	{
 		if(vis->mobjflags&MF_TRANSLATION)
 		{
-			colfunc = R_DrawTranslatedFuzzColumn;
+			colfunc = transfuzzcolfunc;
 			dc_translation = translationtables-256
 				+vis->class*((MAXPLAYERS-1)*256)+
 				((vis->mobjflags&MF_TRANSLATION)>>(MF_TRANSSHIFT-8));
@@ -388,13 +388,13 @@ void R_DrawVisSprite (vissprite_t *vis, int x1, int x2)
 		}
 		else
 		{
-			colfunc = R_DrawAltFuzzColumn;
+			colfunc = altfuzzcolfunc;
 		}
 	}
 	else if(vis->mobjflags&MF_TRANSLATION)
 	{
 		// Draw using translated column function
-		colfunc = R_DrawTranslatedColumn;
+		colfunc = transcolfunc;
 		dc_translation = translationtables-256
 			+vis->class*((MAXPLAYERS-1)*256)+
 			((vis->mobjflags&MF_TRANSLATION)>>(MF_TRANSSHIFT-8));
@@ -410,8 +410,9 @@ void R_DrawVisSprite (vissprite_t *vis, int x1, int x2)
 	// check to see if vissprite is a weapon
 	if(vis->psprite)
 	{
+		// FastHexen: use the vertical step so low/potato detail work
 		dc_texturemid += FixedMul(((centery-viewheight/2)<<FRACBITS),
-			vis->xiscale);
+			dc_iscale);
 		sprtopscreen += (viewheight/2-centery)<<FRACBITS;
 	}
 
@@ -488,6 +489,10 @@ void R_ProjectSprite (mobj_t *thing)
 
 	if (tz < MINZ)
 		return;		// thing is behind view plane
+	// FastHexen: skip far away items and decorations (monsters stay)
+	if (fh_near && tz > 1024*FRACUNIT && !(thing->flags & MF_COUNTKILL)
+		&& thing->player == NULL)
+		return;
 	xscale = FixedDiv(projection, tz);
 
 	gxt = -FixedMul(trx,viewsin);
@@ -727,7 +732,7 @@ void R_DrawPSprite (pspdef_t *psp)
 	vis->psprite = true;
 	vis->texturemid = (BASEYCENTER<<FRACBITS)+FRACUNIT/2
 		-(psp->sy-spritetopoffset[lump]);
-	if(viewheight == SCREENHEIGHT)
+	if(viewheight == RENDERHEIGHT)
 	{
 		vis->texturemid -= PSpriteSY[viewplayer->class]
 			[players[consoleplayer].readyweapon];
@@ -898,7 +903,7 @@ void R_SortVisSprites (void)
 void R_DrawSprite (vissprite_t *spr)
 {
 	drawseg_t		*ds;
-	short			clipbot[SCREENWIDTH], cliptop[SCREENWIDTH];
+	short			clipbot[RENDERWIDTH], cliptop[RENDERWIDTH];
 	int				x, r1, r2;
 	fixed_t			scale, lowscale;
 	int				silhouette;

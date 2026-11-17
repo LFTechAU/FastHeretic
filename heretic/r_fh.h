@@ -37,7 +37,13 @@ extern byte skyflatcolor;
 
 void R_FH_SetDrawers(void);
 byte R_FlatColor(int flatnum);
+#ifdef FH_HEXEN
+void R_ComputeSkyColor(int skytexture);
+byte *R_MergeSkyColumn(byte *front, byte *back);
+extern void (*altfuzzcolfunc)(void);
+#else
 void R_ComputeSkyColor(void);
+#endif
 
 void R_DrawSpanFlat(void);
 

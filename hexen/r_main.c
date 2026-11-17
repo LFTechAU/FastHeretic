@@ -52,7 +52,7 @@ int			viewangletox[FINEANGLES/2];
 
 // The xtoviewangleangle[] table maps a screen pixel to the lowest viewangle
 // that maps back to x ranges from clipangle to -clipangle
-angle_t		xtoviewangle[SCREENWIDTH+1];
+angle_t		xtoviewangle[RENDERWIDTH+1];
 
 // the finetangentgent[angle+FINEANGLES/4] table holds the fixed_t tangent
 // values for view angles, ranging from MININT to 0 to MAXINT.
@@ -72,6 +72,7 @@ void		(*colfunc) (void);
 void		(*basecolfunc) (void);
 void		(*fuzzcolfunc) (void);
 void		(*transcolfunc) (void);
+void		(*transfuzzcolfunc) (void);
 void		(*spanfunc) (void);
 
 /*
@@ -525,8 +526,8 @@ void R_InitLightTables (void)
 		startmap = ((LIGHTLEVELS-1-i)*2)*NUMCOLORMAPS/LIGHTLEVELS;
 		for (j=0 ; j<MAXLIGHTZ ; j++)
 		{
-			scale = FixedDiv ((SCREENWIDTH/2*FRACUNIT), (j+1)<<LIGHTZSHIFT);
-			scale >>= LIGHTSCALESHIFT;
+			scale = FixedDiv ((320/2*FRACUNIT), (j+1)<<LIGHTZSHIFT);
+			scale >>= 12;
 			level = startmap - scale/DISTMAP;
 			if (level < 0)
 				level = 0;
@@ -556,7 +557,7 @@ void R_SetViewSize (int blocks, int detail)
 {
 	setsizeneeded = true;
 	setblocks = blocks;
-	setdetail = detail;
+	setdetail = fh_detail; // FastHeretic: detail comes from F5 / config
 }
 
 /*
@@ -581,8 +582,13 @@ void R_ExecuteSetViewSize (void)
 	}
 	else
 	{
+#ifdef FH_HIRES
+		scaledviewwidth = (setblocks*RENDERWIDTH/10) & ~7;
+		viewheight = (setblocks*FH_VAH/10) & ~1;
+#else
 		scaledviewwidth = setblocks*32;
 		viewheight = (setblocks*161/10);
+#endif
 	}
 
 	detailshift = setdetail;
@@ -594,30 +600,20 @@ void R_ExecuteSetViewSize (void)
 	centeryfrac = centery<<FRACBITS;
 	projection = centerxfrac;
 
-	if (!detailshift)
-	{
-		colfunc = basecolfunc = R_DrawColumn;
-		fuzzcolfunc = R_DrawFuzzColumn;
-		transcolfunc = R_DrawTranslatedColumn;
-		spanfunc = R_DrawSpan;
-	}
-	else
-	{
-		colfunc = basecolfunc = R_DrawColumnLow;
-		fuzzcolfunc = R_DrawFuzzColumn;
-		transcolfunc = R_DrawTranslatedColumn;
-		spanfunc = R_DrawSpanLow;
-	}
+	R_FH_SetDrawers ();
 
 	R_InitBuffer (scaledviewwidth, viewheight);
+#ifdef FH_DIRECT
+	R_FHY_InitTables ();
+#endif
 
 	R_InitTextureMapping ();
 
 //
 // psprite scales
 //
-	pspritescale = FRACUNIT*viewwidth/SCREENWIDTH;
-	pspriteiscale = FRACUNIT*SCREENWIDTH/viewwidth;
+	pspritescale = FRACUNIT*viewwidth/320;
+	pspriteiscale = FRACUNIT*320/viewwidth;
 
 //
 // thing clipping
@@ -649,7 +645,7 @@ void R_ExecuteSetViewSize (void)
 		startmap = ((LIGHTLEVELS-1-i)*2)*NUMCOLORMAPS/LIGHTLEVELS;
 		for (j=0 ; j<MAXLIGHTSCALE ; j++)
 		{
-			level = startmap - j*SCREENWIDTH/(viewwidth<<detailshift)/DISTMAP;
+			level = startmap - j*(320<<FH_LSE)/(viewwidth<<detailshift)/DISTMAP;
 			if (level < 0)
 				level = 0;
 			if (level >= NUMCOLORMAPS)
@@ -770,7 +766,7 @@ void R_SetupFrame(player_t *player)
 	extralight = player->extralight;
 	viewz = player->viewz;
 	
-	tempCentery = viewheight/2+(player->lookdir)*screenblocks/10;
+	tempCentery = viewheight/2+(player->lookdir)*screenblocks*FH_LOOKS/10;
 	if(centery != tempCentery)
 	{
 		centery = tempCentery;
@@ -825,6 +821,9 @@ void R_SetupFrame(player_t *player)
 #endif
 #ifdef __WATCOMC__
 	destview = destscreen+(viewwindowx>>2)+viewwindowy*80;
+#endif
+#ifdef FH_DIRECT
+	R_FHY_SetupFrame ();
 #endif
 
 #if 0

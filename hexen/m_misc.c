@@ -32,6 +32,8 @@
 #include "p_local.h"
 #endif
 #include "soundst.h"
+#include "fh_cpu.h"
+#include "r_fh.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -506,6 +508,9 @@ extern int snd_MusicDevice, // current music card # (index to dmxCodes)
 	snd_SfxDevice; // current sfx card # (index to dmxCodes)
 
 extern int     snd_SBport, snd_SBirq, snd_SBdma;       // sound blaster variables
+#ifdef FH_FDSOUND
+extern int snd_LPTport, snd_Rate, snd_ReverseStereo, snd_MidiType;
+#endif
 extern int     snd_Mport;                              // midi variables
 #endif
 
@@ -604,6 +609,17 @@ default_t defaults[] =
 
 	{ "screenblocks", &screenblocks, 10 },
 
+	// FastHexen options (ignored by the original HEXEN.EXE)
+	{ "fh_detail", &fh_detail, 0 },
+	{ "fh_flatsurfaces", &fh_flatsurfaces, 0 },
+	{ "fh_flatsky", &fh_flatsky, 0 },
+	{ "fh_notrans", &fh_notrans, 0 },
+	{ "fh_showfps", &fh_showfps, 0 },
+	{ "fh_uncapped", &fh_uncapped, 0 },
+	{ "fh_cpu", &fh_cpu, -1 },
+	{ "fh_near", &fh_near, 0 },
+	{ "fh_vsync", &fh_vsync, 0 },
+
 #ifndef __NeXT__
 	{ "snd_channels", &snd_Channels, 3 },
 	{ "snd_musicdevice", &snd_DesiredMusicDevice, 0 },
@@ -612,6 +628,12 @@ default_t defaults[] =
 	{ "snd_sbirq", &snd_SBirq, -1 },
 	{ "snd_sbdma", &snd_SBdma, -1 },
 	{ "snd_mport", &snd_Mport, -1 },
+#ifdef FH_FDSOUND
+	{ "snd_lptport", &snd_LPTport, 0x378 },
+	{ "snd_rate", &snd_Rate, 2 },
+	{ "snd_reversestereo", &snd_ReverseStereo, 0 },
+	{ "snd_miditype", &snd_MidiType, 0 },
+#endif
 #endif
 
 	{ "usegamma", &usegamma, 0 },

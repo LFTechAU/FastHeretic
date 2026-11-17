@@ -17,6 +17,10 @@
 // This *must* be included (near) the beginning for every compilation unit
 #include "gamever.h"
 
+#define FH_HEXEN
+#define FH_VERSION "0.1"
+#define FH_BANNER "FastHexen v" FH_VERSION " by LFTech - based on Hexen v1.0\n"
+
 #include <stdio.h>
 #include <string.h>
 #if (APPVER_HEXENREV >= AV_HR_HEX10A)
@@ -1089,6 +1093,34 @@ void TryRunTics (void);
 #define	SCREENWIDTH		560
 #define	SCREENHEIGHT	375
 #endif
+
+// FastHexen: the 3D view resolution. The high resolution and Mode X
+// builds (-dFH_RW=640 -dFH_RH=480 etc.) draw the view at that size, while
+// menus, status bar and other 2D graphics stay 320x200 and are scaled up
+// by a whole number FH_S, centred, with the status bar at the bottom.
+#ifdef FH_RW
+#define	FH_HIRES
+#define	RENDERWIDTH		FH_RW
+#define	RENDERHEIGHT	FH_RH
+#else
+#define	RENDERWIDTH		SCREENWIDTH
+#define	RENDERHEIGHT	SCREENHEIGHT
+#endif
+#define	FH_SX	(RENDERWIDTH/320)
+#define	FH_SY	(RENDERHEIGHT/200)
+#define	FH_S	(FH_SX < FH_SY ? FH_SX : FH_SY)
+#define	FH_OX	((RENDERWIDTH - 320*FH_S)/2)	// 2D graphics offset
+#define	FH_OY	((RENDERHEIGHT - 200*FH_S)/2)
+#define	FH_SBOY	(RENDERHEIGHT - 200*FH_S)		// status bar offset
+#define	FH_VAH	(RENDERHEIGHT - SBARHEIGHT*FH_S)	// rows above the status bar
+// wider views have bigger wall scales: shift more for the light tables
+// output (view) coordinates back to 320x200 ones, kept on the screen
+#define	FH_VIRTX(x)	((x) <= FH_OX ? 0 : (x) >= FH_OX+320*FH_S ? 320 : ((x)-FH_OX)/FH_S)
+#define	FH_VIRTY(y)	((y) <= FH_OY ? 0 : (y) >= FH_OY+200*FH_S ? 200 : ((y)-FH_OY)/FH_S)
+#define	FH_SKYISCALE	(FRACUNIT*200/(RENDERHEIGHT >= 200 ? RENDERHEIGHT : 200))
+#define	FH_LOOKS	(RENDERHEIGHT >= 400 ? RENDERHEIGHT/200 : 1)	// look up/down scale
+#define	FH_LSE	(RENDERWIDTH >= 1024 ? 2 : RENDERWIDTH >= 512 ? 1 : 0)
+
 
 byte *I_ZoneBase (int *size);
 // called by startup code to get the ammount of memory to malloc

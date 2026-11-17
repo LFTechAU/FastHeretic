@@ -341,7 +341,7 @@ PLANE	=	PLANE + 1
 ENDM
 PCOL	=	PCOL + 1
 ENDM
-hmap320:
+	MAPLABEL      %LINE
 	ret
 
 R_DrawSpan_ ENDP
