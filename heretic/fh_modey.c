@@ -21,6 +21,7 @@
 #include <dos.h>
 #include <stdio.h>
 #include "doomdef.h"
+#include "fh_cpu.h"
 #include "r_local.h"
 #include "r_fh.h"
 
@@ -339,6 +340,8 @@ int ysp_count;
 unsigned ysp_pos, ysp_step;
 
 void R_DrawSpanYCore(void);     // fhasmy.asm
+void R_DrawSpanYCoreSX(void);
+static void (*yspancore)(void) = R_DrawSpanYCore;
 
 void R_DrawSpanY(void)
 {
@@ -364,7 +367,7 @@ void R_DrawSpanY(void)
 		ysp_dest = my_ylookup[ds_y] + my_ofs[u];
 		ysp_count = (ds_x2 - u) / passes + 1;
 		ysp_pos = ((xfrac << 10) & 0xffff0000) | ((yfrac >> 6) & 0xffff);
-		R_DrawSpanYCore();
+		yspancore();
 		xfrac += ds_xstep;
 		yfrac += ds_ystep;
 	}
@@ -415,6 +418,7 @@ void R_DrawSpanFlatY(void)
 
 void R_DrawColumnYA(void);      // fhasmy.asm
 void R_DrawColumnYHA(void);
+void R_DrawColumnYLEA(void);
 
 #if YH
 #define R_DrawColumnYA R_DrawColumnYHA
@@ -441,6 +445,18 @@ void R_FHY_SetDrawers(void)
 	}
 	spanfunc = fh_flatsurfaces ? R_DrawSpanFlatY : R_DrawSpanY;
 	skycolfunc = fh_flatsky ? R_DrawSkyFlatY : R_DrawSkyColumnY;
+
+	// per-CPU versions (FastDoom's choices)
+	fh_usedmmx = 0;
+	yspancore = FH_SpanSX() ? R_DrawSpanYCoreSX : R_DrawSpanYCore;
+#if !YH
+	if (FH_LowColumnLEA())
+	{
+		if (fuzzcolfunc == colfunc)
+			fuzzcolfunc = R_DrawColumnYLEA;
+		colfunc = basecolfunc = R_DrawColumnYLEA;
+	}
+#endif
 }
 
 

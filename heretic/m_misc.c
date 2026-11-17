@@ -14,6 +14,7 @@
 #include <ctype.h>
 
 #include "doomdef.h"
+#include "fh_cpu.h"
 #include "soundst.h"
 #include "r_fh.h"
 
@@ -491,6 +492,7 @@ default_t defaults[] =
 	{ "fh_notrans", &fh_notrans, 0 },
 	{ "fh_showfps", &fh_showfps, 0 },
 	{ "fh_uncapped", &fh_uncapped, 0 },
+	{ "fh_cpu", &fh_cpu, -1 },
 	{ "fh_near", &fh_near, 0 },
 	{ "fh_vsync", &fh_vsync, 0 },
 

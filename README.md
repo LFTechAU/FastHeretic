@@ -117,6 +117,7 @@ Options > FASTHERETIC... in the game menu, or on the command line:
   FPS             frame rate counter, top right
   UNCAPPED        ON draws as many frames as the PC can manage, with
                   smooth movement between the game's 35 tics a second
+  CPU             AUTO, or the CPU to tune the drawers for
 
   -high -low -potato       detail level
   -flatSpan                flat floors, no distance lighting (fastest)
@@ -129,6 +130,9 @@ Options > FASTHERETIC... in the game menu, or on the command line:
   -near / -far             only draw nearby items and decorations
   -fps / -nofps            frame rate counter
   -uncapped / -capped      frame rate above 35 (single player)
+  -386sx -386dx -i486 -cy386 -cy486 -umc486 -cy5x86 -cy6x86 -cy6x86mx
+  -k5 -k6 -pentium -pentiumP54CS -pentiumMMX -pentiumII -winchip -mp6
+                           tune the drawers for this CPU (as FastDoom)
   -vsync / -novsync        wait for vertical retrace
   -size N                  screen size 3 to 11
   -csv                     add -timedemo results to FHBENCH.CSV
@@ -141,13 +145,21 @@ Options > FASTHERETIC... in the game menu, or on the command line:
   -xt                      keyboard fix for PC/XT style keyboard ports
   -noLFB                   VESA builds: use the 64 KB window, not linear
 
+The CPU is found at startup and shown on the startup screen: CPUID
+where there is one, otherwise the DPMI host's CPU type, with a check
+for Cyrix chips. Whether a tuned drawer is faster depends on the whole
+machine, so compare with -timedemo demo1 and the CPU options.
+
 Settings are saved to HERETIC.CFG (the original HERETIC.EXE ignores them).
 
 Changes
 -------
 
 v0.7  FastDoom's sound library with all its cards (above), and the
-      FHSETUP.EXE setup program.
+      FHSETUP.EXE setup program. Drawers tuned per CPU like FastDoom
+      (LEA, loop, Pentium and MMX versions; 2-pixel Mode Y spans for
+      386-class chips), with the CPU found at startup or picked in the
+      menu.
 
 v0.6  Uncapped frame rate with smooth movement (-uncapped, or the menu).
       Mode X 320x240 (FHTICX). High resolution VESA builds from 320x240

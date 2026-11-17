@@ -22,6 +22,7 @@
 #include "p_local.h"
 #include "soundst.h"
 #include "r_local.h"
+#include "fh_cpu.h"
 
 #if (APPVER_HERETICREV < AV_HR_TIC12)
 boolean shareware;		// true if only episode 1 present
@@ -252,6 +253,8 @@ void D_Display(void)
 			FH_InterpolateBegin();
 			R_RenderPlayerView (&players[displayplayer]);
 			FH_InterpolateEnd();
+			if (fh_usedmmx)
+				FH_EMMS();      // MMX drawers ran: free the FPU again
 		}
 #ifdef FH_DIRECT
 		if (!automapactive && !(MenuActive && InfoType) && FHY_Direct())
@@ -1147,6 +1150,9 @@ void D_DoomMain(void)
 	if (M_CheckParm("-low")) fh_detail = 1;
 	if (M_CheckParm("-potato")) fh_detail = 2;
 	if (fh_detail < 0 || fh_detail > 2) fh_detail = 0;
+	FH_InitCPU();
+	printf("CPU: %s%s\n", fh_cpunames[fh_cpusel],
+		fh_cpu == CPU_AUTO ? " (detected)" : "");
 	if (M_CheckParm("-flatsurfaces")) fh_flatsurfaces = 1;
 	if (M_CheckParm("-flatterSpan")) fh_flatsurfaces = 1;
 	if (M_CheckParm("-flatSpan")) fh_flatsurfaces = 2;

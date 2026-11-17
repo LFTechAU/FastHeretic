@@ -3,6 +3,7 @@
 
 #include <ctype.h>
 #include "doomdef.h"
+#include "fh_cpu.h"
 #include "p_local.h"
 #include "r_local.h"
 #include "soundst.h"
@@ -302,14 +303,15 @@ static MenuItem_t Options3Items[] =
 	{ ITT_EFUNC, "GHOSTS :", SCFastOption, 3, MENU_NONE },
 	{ ITT_EFUNC, "FPS :", SCFastOption, 4, MENU_NONE },
 	{ ITT_EFUNC, "ITEMS :", SCFastOption, 5, MENU_NONE },
-	{ ITT_EFUNC, "UNCAPPED :", SCFastOption, 6, MENU_NONE }
+	{ ITT_EFUNC, "UNCAPPED :", SCFastOption, 6, MENU_NONE },
+	{ ITT_EFUNC, "CPU :", SCFastOption, 7, MENU_NONE }
 };
 
 static Menu_t Options3Menu =
 {
 	64, 30,
 	DrawOptions3Menu,
-	7, Options3Items,
+	8, Options3Items,
 	0,
 	MENU_OPTIONS
 };
@@ -866,7 +868,13 @@ static void DrawOptions3Menu(void)
 	MN_DrTextB(fh_showfps ? "ON" : "OFF", 180, 110);
 	MN_DrTextB(fh_near ? "NEAR" : "ALL", 180, 130);
 	MN_DrTextB(fh_uncapped ? "ON" : "OFF", 180, 150);
-	MN_DrTextA("FASTHERETIC V" FH_VERSION " BY LFTECH", 64, 174);
+	{
+		char buf[40];
+		sprintf(buf, "%s%s", fh_cpu == CPU_AUTO ? "AUTO: " : "",
+			fh_cpunames[fh_cpusel]);
+		MN_DrTextA(buf, 130, 175);
+	}
+	MN_DrTextA("FASTHERETIC V" FH_VERSION " BY LFTECH", 64, 190);
 }
 
 void FH_CycleDetail(void)
@@ -902,6 +910,11 @@ static APPVER_MENUITEM_RETTYPE SCFastOption(int option)
 			break;
 		case 6:
 			fh_uncapped ^= 1;
+			break;
+		case 7:
+			fh_cpu = fh_cpu + 1 >= NUM_CPU ? CPU_AUTO : fh_cpu + 1;
+			FH_SelectCPU();
+			R_FH_SetDrawers();
 			break;
 	}
 	S_StartSound(NULL, sfx_chat);

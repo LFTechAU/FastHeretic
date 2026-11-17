@@ -9,6 +9,7 @@
 #include <string.h>
 #include "doomdef.h"
 #include "r_local.h"
+#include "fh_cpu.h"
 #include "r_fh.h"
 
 extern byte *tinttable;
@@ -352,6 +353,8 @@ void R_DrawColumnPotatoA(void);
 void R_DrawSpanLowA(void);
 void R_DrawSpanPotatoA(void);
 
+static void FH_CPUDrawers(void);
+
 void R_FH_SetDrawers(void)
 {
 #ifdef FH_MODEY
@@ -409,4 +412,43 @@ void R_FH_SetDrawers(void)
 	}
 	if (fh_flatsurfaces)
 		spanfunc = R_DrawSpanFlat;
+	FH_CPUDrawers();
+}
+
+// Swap in the drawers tuned for the CPU (FastDoom's choices)
+static void FH_CPUDrawers(void)
+{
+	int col = FH_ColumnKind(), span = FH_SpanKind();
+	void (*c)(void) = NULL;
+
+	fh_usedmmx = 0;
+	switch (detailshift)
+	{
+	case 0:
+		if (col == FHC_LEA) c = R_DrawColumnFastLEA;
+		if (col == FHC_ROLL) c = R_DrawColumnRoll;
+		if (col == FHC_MMX) c = R_DrawColumnMMX, fh_usedmmx = 1;
+		if (!fh_flatsurfaces)
+		{
+			if (span == FHC_ROLL) spanfunc = R_DrawSpanRoll;
+			if (span == FHC_PENTIUM) spanfunc = R_DrawSpanPentium;
+			if (span == FHC_MMX) spanfunc = R_DrawSpanMMX, fh_usedmmx = 1;
+		}
+		break;
+	case 1:
+		if (FH_LowColumnLEA()) c = R_DrawColumnLowFastLEA;
+		if (!fh_flatsurfaces && FH_LowSpanPentium())
+			spanfunc = R_DrawSpanLowPentium;
+		break;
+	default:
+		if (!fh_flatsurfaces && FH_LowSpanPentium())
+			spanfunc = R_DrawSpanPotatoPentium;
+		break;
+	}
+	if (c)
+	{
+		if (fuzzcolfunc == colfunc)
+			fuzzcolfunc = c;
+		colfunc = basecolfunc = c;
+	}
 }
