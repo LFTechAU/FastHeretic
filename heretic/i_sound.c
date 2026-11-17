@@ -240,6 +240,116 @@ void I_UpdateSoundParams(int handle, int vol, int sep, int pitch)
  *
  */
 
+#ifdef FH_FDSOUND
+/*
+ * FastHeretic: sound and music through FastDoom's sound library, which
+ * knows many more cards. Heretic's card numbers (as SETUP.EXE writes
+ * them) still work; numbers from 10 up are the extra cards.
+ */
+
+int snd_LPTport = 0x378;      // LPT DAC, Disney, OPL2LPT/OPL3LPT, LPT MIDI
+extern int snd_Rate;          // effects mixing rate (0-8: 7000 to 44100 Hz), in fhdmx.c
+int snd_ReverseStereo;
+int snd_MidiType;             // 0 general, 1 MT-32, 2 SC-55, 3 MU80, 4 TG300
+
+extern int numChannels, reverseStereo, snd_MidiDevice;
+
+// Heretic card number -> FastDoom card number
+static int FDCard(int dev)
+{
+	if (dev <= snd_MPU)
+		return dev;             // none, PC, Adlib, SB, PAS, GUS, MPU
+	if (dev <= snd_MPU3)
+		return 6;               // MPU
+	if (dev == snd_AWE)
+		return 7;
+	if (dev < NUM_SCARDS)
+		return dev - 2;         // Ensoniq and up
+	return 0;
+}
+
+static const char *cardnames[NUM_SCARDS] = {"none", "PC speaker",
+	"Adlib", "Sound Blaster", "Pro Audio Spectrum", "Gravis UltraSound",
+	"MPU-401", "MPU-401", "MPU-401", "AWE32", "Ensoniq Soundscape",
+	"Disney Sound Source", "Tandy 3 voice", "PC speaker (1 bit)",
+	"LPT DAC (Covox)", "Sound Blaster direct", "PC speaker (PWM)",
+	"Creative Music System", "OPL2LPT", "OPL3LPT", "CD audio",
+	"WAV files", "Sound Blaster MIDI", "Serial MIDI", "LPT MIDI",
+	"Windows Sound System", "IBM Music Feature", "ESFM", "Adlib Gold"};
+
+void I_StartupSound (void)
+{
+	int mdev, sdev, musport, sndport, p;
+	void *genmidi = NULL;
+	char tmp[100];
+
+	I_StartupTimer();
+
+	snd_MusicDevice = snd_DesiredMusicDevice;
+	snd_SfxDevice = snd_DesiredSfxDevice;
+	p = M_CheckParm("-sfxdev");
+	if (p && p < myargc - 1)
+		snd_SfxDevice = atoi(myargv[p + 1]);
+	p = M_CheckParm("-musdev");
+	if (p && p < myargc - 1)
+		snd_MusicDevice = atoi(myargv[p + 1]);
+	if (M_CheckParm("-nosound")) snd_MusicDevice = snd_SfxDevice = snd_none;
+	if (M_CheckParm("-nosfx")) snd_SfxDevice = snd_none;
+	if (M_CheckParm("-nomusic")) snd_MusicDevice = snd_none;
+	if (snd_MusicDevice < 0 || snd_MusicDevice >= NUM_SCARDS)
+		snd_MusicDevice = snd_none;
+	if (snd_SfxDevice < 0 || snd_SfxDevice >= NUM_SCARDS)
+		snd_SfxDevice = snd_none;
+	if (M_CheckParm("-reverseStereo"))
+		snd_ReverseStereo = 1;
+
+	// Heretic has no PC speaker sound lumps: play the samples through
+	// the speaker instead
+	sdev = snd_SfxDevice == snd_PC ? FDCard(snd_PC1BIT) : FDCard(snd_SfxDevice);
+	mdev = FDCard(snd_MusicDevice);
+
+	switch (snd_MusicDevice)
+	{
+	case snd_Adlib: case snd_SB: case snd_PAS: case snd_OPL2LPT:
+	case snd_OPL3LPT: case snd_ESFM: case snd_GOLD: case snd_AWE:
+		genmidi = W_CacheLumpName("GENMIDI", PU_STATIC);
+		break;
+	case snd_GUS:
+		p = W_GetNumForName("DMXGUS");
+		GF1_SetMap(W_CacheLumpNum(p, PU_CACHE), lumpinfo[p].size);
+		break;
+	}
+	musport = snd_Mport > 0 ? snd_Mport : 0x330;
+	if (snd_MusicDevice == snd_OPL2LPT || snd_MusicDevice == snd_OPL3LPT
+		|| snd_MusicDevice == snd_LPTMIDI)
+		musport = snd_LPTport;
+	if (snd_MusicDevice == snd_RS232MIDI)
+		musport = snd_Mport > 0 ? snd_Mport : 0x3f8;
+	sndport = snd_LPTport;
+	if (snd_SfxDevice == snd_CMS)
+		sndport = snd_SBport > 0 ? snd_SBport : 0x220;
+
+	numChannels = snd_Channels > 0 ? snd_Channels : 8;
+	reverseStereo = snd_ReverseStereo;
+	snd_MidiDevice = snd_MidiType;
+
+	sprintf(tmp, "  music: %s, effects: %s\n",
+		cardnames[snd_MusicDevice], cardnames[snd_SfxDevice]);
+	tprintf(tmp, 1);
+	FHS_Init(mdev, sdev, musport, sndport, genmidi);
+}
+
+void I_ShutdownSound (void)
+{
+	FHS_DeInit();
+	I_ShutdownTimer();
+}
+
+void I_SetChannels(int channels)
+{
+}
+
+#else // original DMX startup
 //
 // Why PC's Suck, Reason #8712
 //
@@ -403,3 +513,4 @@ void I_SetChannels(int channels)
 {
   WAV_PlayMode(channels, SND_SAMPLERATE);
 }
+#endif // FH_FDSOUND

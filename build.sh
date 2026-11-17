@@ -82,7 +82,8 @@ if [ "$CPU" = stock ]; then
   STUB="$WATCOM/binw/wstub.exe"
 else
   STUB="$ROOT/dos32a/STUB32A.EXE"
-CCOPTS="-dAPPVER_EXEDEF=TIC13 ${CCEXTRA} $MODEDEF -omaxtnrih -ol+ -oe=32 -zp1 $CPUOPT -ei -j -zq -zc -bt=dos -i=$ROOT/heretic -i=$ROOT/apodmx"
+FDOPTS="${CCEXTRA} -omaxtnrih -ol+ -oe=32 -zp1 $CPUOPT -ei -j -zq -zc -bt=dos"
+CCOPTS="-dAPPVER_EXEDEF=TIC13 -dFH_FDSOUND ${CCEXTRA} $MODEDEF -omaxtnrih -ol+ -oe=32 -zp1 $CPUOPT -ei -j -zq -zc -bt=dos -i=$ROOT/heretic -i=$ROOT/heretic/fdsnd"
 fi
 
 HERETIC_C="am_map ct_chat d_main d_net f_finale g_game info in_lude i_cyber i_ibm i_sound \
@@ -90,9 +91,22 @@ HERETIC_C="am_map ct_chat d_main d_net f_finale g_game info in_lude i_cyber i_ib
  p_plats p_pspr p_setup p_sight p_spec p_switch p_telept p_tick p_user r_bsp r_data r_draw \
  r_main r_plane r_segs r_things sb_bar sounds tables v_video w_wad z_zone i_text r_fhdraw fh_modey fhvideo fh_vesa fh_uncap fh_hires"
 APODMX_C="dmx dpmiapi mus2mid tsmapi usrhooks"
+FDSND_C="ns_adbfx ns_awe32 ns_cd ns_cms ns_dma ns_dpmi ns_dsney ns_esfm ns_fxm ns_gold ns_gus ns_gusau \
+ ns_gusmi ns_imfc ns_irq ns_llm ns_lpt ns_lptmusic ns_midi ns_mpu401 ns_multi ns_music ns_pas16 ns_pcfx \
+ ns_pwm ns_rs232 ns_sb ns_sbdm ns_sbmid ns_sbmus ns_scape ns_speak ns_tandy ns_task ns_wss \
+ mus2mid fhdmx tsmapi dpmiapi"
 
 for f in $HERETIC_C; do wcc386 $CCOPTS -fo=$f.obj "$ROOT/heretic/$f.c"; done
-for f in $APODMX_C; do wcc386 $CCOPTS -fo=$f.obj "$ROOT/apodmx/$f.c"; done
+if [ "$CPU" = stock ]; then
+  for f in $APODMX_C; do wcc386 $CCOPTS -fo=$f.obj "$ROOT/apodmx/$f.c"; done
+  SNDOBJ="$APODMX_C"
+  SNDLIB="$ROOT/audiolib"
+else
+  for f in $FDSND_C; do wcc386 $FDOPTS -i=$ROOT/heretic/fdsnd/compat -i=$ROOT/heretic/fdsnd -fo=$f.obj "$ROOT/heretic/fdsnd/$f.c"; done
+  nasm -f obj -i "$ROOT/heretic/fdsnd/" -o ns_mix.obj "$ROOT/heretic/fdsnd/ns_mix.asm"
+  SNDOBJ="$FDSND_C ns_mix"
+  SNDLIB="$ROOT/heretic/fdsnd"
+fi
 for f in i_ibm_a linear; do wasm -zq $WASMDEF -fo=$f.obj "$ROOT/heretic/$f.asm"; done
 nasm -f obj $NASMRES -o fhasm.obj "$ROOT/heretic/fhasm.asm"
 for f in $EXTRAOBJ; do nasm -f obj $NASMRES -o $f.obj "$ROOT/heretic/$f.asm"; done
@@ -115,12 +129,12 @@ fi
   echo "name ${EXE%.exe}"
   echo "libpath %WATCOM%/lib386"
   echo "libpath %WATCOM%/lib386/dos"
-  echo "libpath $ROOT/audiolib"
-  echo "lib audio_wf.lib"
+  echo "libpath $SNDLIB"
+  [ "$CPU" = stock ] && echo "lib audio_wf.lib"
   echo "lib gf1_osf.lib"
   echo "lib pawe32.lib"
   echo "option stub=$STUB"
-  for f in $HERETIC_C $APODMX_C i_ibm_a linear fhasm $EXTRAOBJ; do echo "file $f.obj"; done
+  for f in $HERETIC_C $SNDOBJ i_ibm_a linear fhasm $EXTRAOBJ; do echo "file $f.obj"; done
 } > link.lnk
 
 wlink @link.lnk

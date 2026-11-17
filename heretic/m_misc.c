@@ -392,6 +392,9 @@ extern int snd_MusicDevice, // current music card # (index to dmxCodes)
 	snd_SfxDevice; // current sfx card # (index to dmxCodes)
 
 extern int     snd_SBport, snd_SBirq, snd_SBdma;       // sound blaster variables
+#ifdef FH_FDSOUND
+extern int snd_LPTport, snd_Rate, snd_ReverseStereo, snd_MidiType;
+#endif
 extern int     snd_Mport;                              // midi variables
 #endif
 
@@ -503,6 +506,12 @@ default_t defaults[] =
 	{ "snd_sbirq", &snd_SBirq, -1 },
 	{ "snd_sbdma", &snd_SBdma, -1 },
 	{ "snd_mport", &snd_Mport, -1 },
+#ifdef FH_FDSOUND
+	{ "snd_lptport", &snd_LPTport, 0x378 },
+	{ "snd_rate", &snd_Rate, 2 },
+	{ "snd_reversestereo", &snd_ReverseStereo, 0 },
+	{ "snd_miditype", &snd_MidiType, 0 },
+#endif
 #endif
 
 	{ "usegamma", &usegamma, 0 },

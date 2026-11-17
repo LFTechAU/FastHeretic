@@ -123,6 +123,9 @@ void S_StartSong(int song, boolean loop)
 	#ifdef __WATCOMC__
 		_dpmi_lockregion(mus_sndptr, lumpinfo[mus_lumpnum].size);
 	#endif
+#ifdef FH_FDSOUND
+	FHS_SetSongNum(song);
+#endif
 	rs = I_RegisterSong(mus_sndptr);
 	I_PlaySong(rs, loop); //'true' denotes endless looping.
 	mus_song = song;
@@ -479,6 +482,9 @@ void S_UpdateSounds(mobj_t *listener)
 	int absx;
 	int absy;
 
+#ifdef FH_FDSOUND
+	FHS_Update();
+#endif
 	listener = players[consoleplayer].mo;
 	if(snd_MaxVolume == 0)
 	{
