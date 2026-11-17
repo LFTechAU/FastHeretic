@@ -4,7 +4,7 @@
 #   cpu  = 386 (default) | 486 | 586 | stock
 #   mode = y (default, Mode Y straight to video memory) | 13h | yh (half height) | vbr vbd (VESA)
 #          | cga bwc c16 512 cah cvb ega hgc inc pcp 400 (FastDoom modes)
-#          | t1 t12 t25 t43 t50 mda (text modes)
+#          | t1 t12 t25 t43 t50 mda cda vt (text modes)
 #          | x (Mode X 320x240) | m240r m240d ... m1200r m1200d (high resolution VESA)
 # "stock" = plain Heretic v1.3 settings (original compiler flags, DOS/4GW,
 # FastHeretic options off) with only the -timedemo fix: a fair baseline.
@@ -57,6 +57,8 @@ case "$MODE" in
   t43) fdmode MODE_T8043   "" "" t43 ;;
   t50) fdmode MODE_T8050   "" "" t50 ;;
   mda) fdmode MODE_MDA     "" "" mda ;;
+  cda) fdmode MODE_CMDA    "" "" cda ;;
+  vt)  fdmode MODE_VT100   "" "" vt ;;
   *) echo "unknown mode $MODE"; exit 1 ;;
 esac
 [ "$CPU" = stock ] && EXE=htic13f.exe

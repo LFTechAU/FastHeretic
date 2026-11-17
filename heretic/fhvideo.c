@@ -21,6 +21,7 @@
 #include <conio.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 byte backbuffer[SCREENWIDTH * SCREENHEIGHT];
 byte fd_gamma[256];
@@ -30,7 +31,8 @@ int snowfix;
 unsigned char CGAmodel = 1;   // CGA_NEW
 
 #if defined(MODE_T4025) || defined(MODE_T4050) || defined(MODE_T8025) \
-	|| defined(MODE_T8043) || defined(MODE_T8050) || defined(MODE_MDA)
+	|| defined(MODE_T8043) || defined(MODE_T8050) || defined(MODE_MDA) \
+	|| defined(MODE_CMDA) || defined(MODE_VT100)
 #define FH_TEXT
 #endif
 
@@ -66,9 +68,17 @@ int GetClosestColor(const byte *colors, int num_colors, int r1, int g1, int b1);
 #define TCOLS 80
 #define TROWS 25
 #define THALF 0
+#elif defined(MODE_CMDA)      // colour text at the MDA address (B000)
+#define TCOLS 80
+#define TROWS 25
+#define THALF 1
+#elif defined(MODE_VT100)     // shaded ASCII, also sent to a serial terminal
+#define TCOLS 80
+#define TROWS 24
+#define THALF 0
 #endif
 
-#ifdef MODE_MDA
+#if defined(MODE_MDA) || defined(MODE_CMDA)
 #define TVRAM ((unsigned short *)0xB0000)
 #else
 #define TVRAM ((unsigned short *)0xB8000)
@@ -86,13 +96,119 @@ static int cgacard;                             // -cga: real CGA, no BIOS blink
 static int rowofs[TROWS * 2];                   // backbuffer offset of each sample row
 static int colofs[TCOLS];
 
+#ifdef MODE_VT100
+//--------------------------------------------------------------------------
+// Serial VT100 terminal: -com 1..4 (default 1), -baud N (default 38400).
+// Only changed characters are sent, and only as many as the port can take
+// without waiting, so a slow terminal lags behind instead of slowing the
+// game down.
+//--------------------------------------------------------------------------
+
+static int vtport;
+static byte vtshown[TROWS][TCOLS];      // what the terminal shows
+static char vtq[256];
+static int vtqhead, vtqtail;
+static int vtpos;                       // next cell to check
+static int vtcurx = -1, vtcury = -1;
+
+static void VT_Put(const char *str)
+{
+	while (*str)
+	{
+		vtq[vtqtail] = *str++;
+		vtqtail = (vtqtail + 1) & 255;
+	}
+}
+
+static void VT_Init(void)
+{
+	static const int ports[4] = {0x3f8, 0x2f8, 0x3e8, 0x2e8};
+	int p, com = 1, baud = 38400, div;
+
+	p = M_CheckParm("-com");
+	if (p && p < myargc - 1)
+		com = atoi(myargv[p + 1]);
+	if (com < 1 || com > 4)
+		com = 1;
+	p = M_CheckParm("-baud");
+	if (p && p < myargc - 1)
+		baud = atoi(myargv[p + 1]);
+	if (baud < 300 || baud > 115200)
+		baud = 38400;
+	vtport = ports[com - 1];
+	div = 115200 / baud;
+	outp(vtport + 1, 0);                 // no interrupts
+	outp(vtport + 3, 0x80);              // divisor latch
+	outp(vtport + 0, div & 0xff);
+	outp(vtport + 1, div >> 8);
+	outp(vtport + 3, 0x03);              // 8N1
+	outp(vtport + 2, 0xc7);              // FIFO on (16550)
+	outp(vtport + 4, 0x03);              // DTR, RTS
+	memset(vtshown, ' ', sizeof(vtshown));
+	VT_Put("\x1b[2J\x1b[H");
+}
+
+static void VT_Send(void)
+{
+	int n;
+
+	// the port takes 16 bytes at a time when its FIFO is empty
+	while (vtqhead != vtqtail && (inp(vtport + 5) & 0x20))
+	{
+		for (n = 0; n < 16 && vtqhead != vtqtail; n++)
+		{
+			outp(vtport, vtq[vtqhead]);
+			vtqhead = (vtqhead + 1) & 255;
+		}
+	}
+}
+
+// Queue changed cells while there is room in the queue
+static void VT_Update(void)
+{
+	int checked, x, y;
+	char buf[16];
+	byte c;
+
+	VT_Send();
+	for (checked = 0; checked < TROWS * TCOLS; checked++)
+	{
+		if (((vtqtail - vtqhead) & 255) > 200)
+			break;
+		y = vtpos / TCOLS;
+		x = vtpos % TCOLS;
+		vtpos = (vtpos + 1) % (TROWS * TCOLS);
+		c = (byte)textbuf[y * TCOLS + x];
+		if (c == vtshown[y][x])
+			continue;
+		vtshown[y][x] = c;
+		if (y != vtcury || x != vtcurx)
+		{
+			sprintf(buf, "\x1b[%d;%dH", y + 1, x + 1);
+			VT_Put(buf);
+		}
+		buf[0] = c;
+		buf[1] = 0;
+		VT_Put(buf);
+		vtcury = y;
+		vtcurx = x + 1;
+		if (vtcurx >= TCOLS)
+			vtcurx = -1;            // terminals differ at the right edge
+	}
+	VT_Send();
+}
+#endif
+
 static void FHT_InitGraphics(void)
 {
 	union REGS regs;
 	int i, sub;
 
 	cgacard = M_CheckParm("-cga");
-#ifdef MODE_MDA
+#ifdef MODE_VT100
+	VT_Init();
+#endif
+#if defined(MODE_MDA) || defined(MODE_CMDA)
 	regs.w.ax = 0x07;
 	int386(0x10, &regs, &regs);
 #else
@@ -108,7 +224,7 @@ static void FHT_InitGraphics(void)
 	regs.h.ah = 0x01;                   // hide the cursor
 	regs.h.ch = 0x3F;
 	int386(0x10, &regs, &regs);
-#ifdef MODE_MDA
+#if defined(MODE_MDA) || defined(MODE_CMDA)
 	outp(0x3B8, 0x09);                  // no blink: 16 background shades
 #else
 	if (cgacard)
@@ -138,7 +254,13 @@ static void FHT_SetPalette(byte *palette)
 		r = gammatable[usegamma][palette[0]] >> 2;
 		g = gammatable[usegamma][palette[1]] >> 2;
 		b = gammatable[usegamma][palette[2]] >> 2;
-#ifdef MODE_MDA
+#if defined(MODE_VT100)
+		{ // ASCII shades by brightness
+			static const char shades[] = " .:-=+*#%@";
+			int l = (r * 30 + g * 59 + b * 11) / 100;   // 0..63
+			textlut[i] = shades[(l * 10) / 64];
+		}
+#elif defined(MODE_MDA)
 		{ // shade character by brightness: space, light, medium, dark, full
 			static const byte shades[5] = {0x20, 0xB0, 0xB1, 0xB2, 0xDB};
 			int l = (r * 30 + g * 59 + b * 11) / 100;   // 0..63
@@ -169,7 +291,7 @@ static void FHT_Update(void)
 #endif
 		for (x = 0; x < TCOLS; x++, dst++, old++)
 		{
-#if defined(MODE_MDA)
+#if defined(MODE_MDA) || defined(MODE_VT100)
 			cell = 0x0700 | textlut[top[colofs[x]]];
 #elif THALF
 			// upper half block: foreground on top, background below
@@ -185,6 +307,9 @@ static void FHT_Update(void)
 			}
 		}
 	}
+#ifdef MODE_VT100
+	VT_Update();
+#endif
 }
 
 #else // FastDoom graphics modes

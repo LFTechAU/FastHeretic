@@ -57,6 +57,9 @@ Other video cards (all built for 386, from FastDoom's video code):
   FHTICT43.EXE 80x43 text, 80x86 blocks (EGA)
   FHTICT50.EXE 80x50 text, 80x100 blocks (VGA)
   FHTICMDA.EXE MDA 80x25 text, shaded blocks
+  FHTICCDA.EXE 80x25 colour text at the MDA address (colour MDA cards)
+  FHTICVT.EXE  80x24 shaded ASCII, also sent to a VT100 terminal on a
+               serial port: -com 1..4 (default 1), -baud N (default 38400)
 
   -snow fixes snow on IBM CGA cards, -cga fixes the text modes on CGA
   cards. The text modes draw the whole picture first, so add -potato
