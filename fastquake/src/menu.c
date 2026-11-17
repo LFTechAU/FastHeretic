@@ -1369,11 +1369,11 @@ void M_FastQuake_Draw (void)
 		v = (int)fqitems[i].var->value;
 		if (v < 0 || v >= fqitems[i].count)
 			v = 0;
-		M_Print (16 + 8*(17 - strlen(fqitems[i].label)), 48 + i*8, fqitems[i].label);
-		M_Print (176, 48 + i*8, fqitems[i].names[v]);
+		M_Print (168 - 8*strlen(fqitems[i].label), 48 + i*8, fqitems[i].label);
+		M_Print (192, 48 + i*8, fqitems[i].names[v]);
 	}
-	M_Print (16, 48 + FQ_ITEMS*8 + 16, " Left/Right or Enter to change");
-	M_DrawCharacter (160, 48 + fq_cursor*8, 12+((int)(realtime*4)&1));
+	M_Print (72, 48 + FQ_ITEMS*8 + 16, "Left/Right or Enter to change");
+	M_DrawCharacter (176, 48 + fq_cursor*8, 12+((int)(realtime*4)&1));
 }
 
 void M_FastQuake_Key (int k)
@@ -3116,6 +3116,7 @@ void M_Init (void)
 	Cmd_AddCommand ("menu_multiplayer", M_Menu_MultiPlayer_f);
 	Cmd_AddCommand ("menu_setup", M_Menu_Setup_f);
 	Cmd_AddCommand ("menu_options", M_Menu_Options_f);
+	Cmd_AddCommand ("menu_fastquake", M_Menu_FastQuake_f);
 	Cmd_AddCommand ("menu_keys", M_Menu_Keys_f);
 	Cmd_AddCommand ("menu_video", M_Menu_Video_f);
 	Cmd_AddCommand ("help", M_Menu_Help_f);
