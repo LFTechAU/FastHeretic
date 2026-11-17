@@ -7,6 +7,16 @@ extern int fh_flatsurfaces;  // 0 textured, 1 flat lit by distance, 2 flat
 extern int fh_flatsky;       // single-colour sky
 extern int fh_notrans;       // ghosts: 0 see-thru, 1 solid, 2 saturn
 extern int fh_showfps;       // frame rate counter
+extern int fh_uncapped;      // draw frames between tics
+extern int fh_uncapnow;
+extern volatile int ticcount_hr;
+extern fixed_t fh_interpweight;
+void FH_ResetInterpolation(void);
+void FH_SaveInterpolation(void);
+void FH_InterpolateBegin(void);
+void FH_InterpolateEnd(void);
+void FH_SetUncapped(int on);
+void FH_TryRunTicsUncapped(void);
 extern int fh_near;          // only draw nearby non-monster sprites
 extern int fh_vsync;         // wait for vertical retrace before blits
 extern int fh_csv;           // append timedemo results to FHBENCH.CSV

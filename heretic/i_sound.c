@@ -37,6 +37,14 @@ void I_StartupTimer (void)
 #endif
 }
 
+// FastHeretic: 560 Hz while the frame rate is uncapped
+void I_SetTimerRate (int rate)
+{
+#ifndef NOTIMER
+	TSM_SetRate(tsm_ID, rate);
+#endif
+}
+
 void I_ShutdownTimer (void)
 {
 	TSM_DelService(tsm_ID);

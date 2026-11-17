@@ -71,6 +71,8 @@ Options > FASTHERETIC... in the game menu, or on the command line:
   SKY             NORMAL or FLAT (one colour)
   GHOSTS          SEE-THRU or SOLID (faster translucent sprites)
   FPS             frame rate counter, top right
+  UNCAPPED        ON draws as many frames as the PC can manage, with
+                  smooth movement between the game's 35 tics a second
 
   -high -low -potato       detail level
   -flatSpan                flat floors, no distance lighting (fastest)
@@ -82,6 +84,7 @@ Options > FASTHERETIC... in the game menu, or on the command line:
   -translucent / -defInv   normal see-through ghosts
   -near / -far             only draw nearby items and decorations
   -fps / -nofps            frame rate counter
+  -uncapped / -capped      frame rate above 35 (single player)
   -vsync / -novsync        wait for vertical retrace
   -size N                  screen size 3 to 11
   -csv                     add -timedemo results to FHBENCH.CSV

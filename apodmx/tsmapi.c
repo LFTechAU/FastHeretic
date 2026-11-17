@@ -64,3 +64,7 @@ void TSM_Remove(void) {
     TS_Shutdown();
 }
 
+void TSM_SetRate(int id, int rate) {
+    if (id >= 0 && tasks[id].t)
+        TS_SetTaskRate(tasks[id].t, rate);
+}

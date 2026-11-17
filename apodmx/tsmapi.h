@@ -6,4 +6,5 @@ void TSM_DelService(int id);
 void TSM_Remove(void);
 void TSM_PauseService(int id);
 void TSM_ResumeService(int id);
+void TSM_SetRate(int id, int rate);
 #endif

@@ -487,6 +487,7 @@ default_t defaults[] =
 	{ "fh_flatsky", &fh_flatsky, 0 },
 	{ "fh_notrans", &fh_notrans, 0 },
 	{ "fh_showfps", &fh_showfps, 0 },
+	{ "fh_uncapped", &fh_uncapped, 0 },
 	{ "fh_near", &fh_near, 0 },
 	{ "fh_vsync", &fh_vsync, 0 },
 

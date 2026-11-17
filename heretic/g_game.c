@@ -719,6 +719,7 @@ void G_DoLoadLevel (void)
 	int             i;
 
 	levelstarttic = gametic;        // for time calculation
+	FH_ResetInterpolation();
 	gamestate = GS_LEVEL;
 	for (i=0 ; i<MAXPLAYERS ; i++)
 	{

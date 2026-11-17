@@ -301,14 +301,15 @@ static MenuItem_t Options3Items[] =
 	{ ITT_EFUNC, "SKY :", SCFastOption, 2, MENU_NONE },
 	{ ITT_EFUNC, "GHOSTS :", SCFastOption, 3, MENU_NONE },
 	{ ITT_EFUNC, "FPS :", SCFastOption, 4, MENU_NONE },
-	{ ITT_EFUNC, "ITEMS :", SCFastOption, 5, MENU_NONE }
+	{ ITT_EFUNC, "ITEMS :", SCFastOption, 5, MENU_NONE },
+	{ ITT_EFUNC, "UNCAPPED :", SCFastOption, 6, MENU_NONE }
 };
 
 static Menu_t Options3Menu =
 {
 	64, 30,
 	DrawOptions3Menu,
-	6, Options3Items,
+	7, Options3Items,
 	0,
 	MENU_OPTIONS
 };
@@ -864,7 +865,8 @@ static void DrawOptions3Menu(void)
 	MN_DrTextB(ghosts[fh_notrans], 180, 90);
 	MN_DrTextB(fh_showfps ? "ON" : "OFF", 180, 110);
 	MN_DrTextB(fh_near ? "NEAR" : "ALL", 180, 130);
-	MN_DrTextA("FASTHERETIC V" FH_VERSION " BY LFTECH", 64, 160);
+	MN_DrTextB(fh_uncapped ? "ON" : "OFF", 180, 150);
+	MN_DrTextA("FASTHERETIC V" FH_VERSION " BY LFTECH", 64, 174);
 }
 
 void FH_CycleDetail(void)
@@ -897,6 +899,9 @@ static APPVER_MENUITEM_RETTYPE SCFastOption(int option)
 			break;
 		case 5:
 			fh_near ^= 1;
+			break;
+		case 6:
+			fh_uncapped ^= 1;
 			break;
 	}
 	S_StartSound(NULL, sfx_chat);

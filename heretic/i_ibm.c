@@ -1375,7 +1375,13 @@ _outbyte(PEL_DATA,b);
 
 int I_TimerISR (void)
 {
-	ticcount++;
+	if (fh_uncapnow)
+	{ // 560 Hz: 16 per tic
+		if ((++ticcount_hr & 15) == 0)
+			ticcount++;
+	}
+	else
+		ticcount++;
 	return 0;
 }
 

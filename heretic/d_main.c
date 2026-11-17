@@ -177,6 +177,8 @@ static int fh_debugcard;            // -debugCard2 / -debugCard4: FPS on a POST 
 static int fh_debugport = 0x80;
 static int fh_shottic = -1;
 static int fh_shotmenu = 0;
+static int fh_quittic = -1;         // -fhquit tic: test runs, quit with frame count
+static int fh_quitframes, fh_quitstart;
 extern void MN_FHShowMenu(int which);
 
 extern void MN_DrTextA(char *text, int x, int y);
@@ -246,7 +248,11 @@ void D_Display(void)
 		if (automapactive)
 			AM_Drawer ();
 		else
+		{
+			FH_InterpolateBegin();
 			R_RenderPlayerView (&players[displayplayer]);
+			FH_InterpolateEnd();
+		}
 #ifdef FH_DIRECT
 		if (!automapactive && !(MenuActive && InfoType) && FHY_Direct())
 		{ // view is in the page already: status bar, border, then overlays
@@ -294,6 +300,20 @@ void D_Display(void)
 	// Handle player messages
 	DrawMessage();
 
+	if (fh_quittic >= 0 && gamestate == GS_LEVEL)
+	{
+		if (!fh_quitframes++)
+			fh_quitstart = ticcount;
+		if (gametic >= fh_quittic)
+		{
+			FILE *f = fopen("FHQUIT.TXT", "w");
+			int t = ticcount - fh_quitstart;
+			fprintf(f, "%d frames in %d tics: %d.%02d fps\n", fh_quitframes, t,
+				fh_quitframes * 35 / t, (fh_quitframes * 3500 / t) % 100);
+			fclose(f);
+			I_Quit();
+		}
+	}
 	if (fh_shottic >= 0 && gametic == fh_shottic && gamestate == GS_LEVEL)
 	{
 		if (fh_shotmenu)
@@ -353,8 +373,14 @@ void D_DoomLoop(void)
 			gametic++;
 			maketic++;
 		}
+		else if (fh_uncapped && gamestate == GS_LEVEL && !netgame)
+		{ // FastHeretic: draw frames between tics
+			FH_SetUncapped(1);
+			FH_TryRunTicsUncapped();
+		}
 		else
 		{
+			FH_SetUncapped(0);
 			// Will run at least one tic
 			TryRunTics();
 		}
@@ -1154,9 +1180,14 @@ void D_DoomMain(void)
 	if (M_CheckParm("-flatsky")) fh_flatsky = 1;
 	if (M_CheckParm("-notrans")) fh_notrans = 1;
 	if (M_CheckParm("-fps")) fh_showfps = 1;
+	if (M_CheckParm("-uncapped")) fh_uncapped = 1;
+	if (M_CheckParm("-capped")) fh_uncapped = 0;
 	p = M_CheckParm("-fhshot");
 	if (p && p < myargc-1)
 		fh_shottic = atoi(myargv[p+1]);
+	p = M_CheckParm("-fhquit");
+	if (p && p < myargc-1)
+		fh_quittic = atoi(myargv[p+1]);
 	p = M_CheckParm("-fhmenu");
 	if (p && p < myargc-1)
 		fh_shotmenu = atoi(myargv[p+1]);

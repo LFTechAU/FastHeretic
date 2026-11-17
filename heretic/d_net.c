@@ -3,6 +3,7 @@
 // This version has the fixed ticdup code
 
 #include "doomdef.h"
+#include "r_local.h"
 
 #define NCMD_EXIT               0x80000000
 #define NCMD_RETRANSMIT 0x40000000
@@ -781,4 +782,39 @@ if (debugfile)
 		}
 		NetUpdate ();                                   // check for new console commands
 	}
+}
+
+/*
+===============
+=
+= FH_TryRunTicsUncapped
+=
+= FastHeretic: run the tics that are due (maybe none) and set how far
+= the next frame is into the current tic. Single player only.
+=
+===============
+*/
+
+void FH_TryRunTicsUncapped (void)
+{
+	int i, lowtic;
+
+	NetUpdate ();
+	lowtic = MAXINT;
+	for (i=0 ; i<doomcom->numnodes ; i++)
+		if (nodeingame[i] && nettics[i] < lowtic)
+			lowtic = nettics[i];
+	while (gametic < lowtic)
+	{
+		FH_SaveInterpolation ();
+		if (advancedemo)
+			D_DoAdvanceDemo ();
+		MN_Ticker ();
+		G_Ticker ();
+		gametic++;
+		NetUpdate ();
+		if (gamestate != GS_LEVEL)
+			break;
+	}
+	fh_interpweight = (ticcount_hr & 15) << 12;
 }
