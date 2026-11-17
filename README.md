@@ -75,9 +75,35 @@ try both on your machine with -timedemo demo1.
                comparing speeds (needs DOS4GW.EXE from your Heretic)
 
 The FHTIC files use the DOS/32A extender, so DOS4GW.EXE is not needed.
-Use the original SETUP.EXE to configure sound and controls.
+Run FHSETUP.EXE to pick the sound cards (and a few display options),
+and the original SETUP.EXE for the controls. Each one keeps the
+other's settings in HERETIC.CFG.
 
 Benchmark:  FHTIC -timedemo demo1
+
+Sound
+-----
+
+Sound and music use FastDoom's sound library, so every card it knows
+works here. FHSETUP.EXE lists them with what each one needs:
+
+  Effects  Sound Blaster (and direct), Pro Audio Spectrum, Gravis
+           UltraSound, AWE32, Ensoniq Soundscape, Windows Sound System,
+           Adlib Gold, Adlib (OPL), Disney Sound Source, Covox, Tandy,
+           CMS, OPL2LPT, OPL3LPT, PC speaker (normal or PWM)
+  Music    OPL (Adlib, Sound Blaster, PAS), General MIDI (MPU-401, SB
+           MIDI, serial, LPT), GUS, AWE32 (needs SYNTHGS.SBK), Soundscape,
+           IBM Music Feature, ESFM, CMS, OPL2LPT, OPL3LPT, CD audio
+           (track 2 is the first song), WAV files (MUSIC\HERETIC\MUS_n.RAW)
+
+The Sound Blaster port, IRQ and DMA from HERETIC.CFG override the
+BLASTER variable; without BLASTER the card is used as a plain 8-bit one.
+Heretic's own card numbers mean what they did, so old HERETIC.CFG files
+still work.
+
+  -sfxdev N / -musdev N    card number for this run (see HERETIC.CFG)
+  -nosound -nosfx -nomusic
+  -reverseStereo           swap left and right
 
 Speed options
 -------------
@@ -120,6 +146,9 @@ Settings are saved to HERETIC.CFG (the original HERETIC.EXE ignores them).
 Changes
 -------
 
+v0.7  FastDoom's sound library with all its cards (above), and the
+      FHSETUP.EXE setup program.
+
 v0.6  Uncapped frame rate with smooth movement (-uncapped, or the menu).
       Mode X 320x240 (FHTICX). High resolution VESA builds from 320x240
       to 1600x1200 (FHM...D/R). Colour MDA (FHTICCDA) and VT100 serial
@@ -149,6 +178,7 @@ Credits and licence
   Source restoration: NY00123's gamesrc-ver-recreation project
   DMX replacement (APODMX): Nuke.YKT and NY00123
   Apogee Sound System: Jim Dose / 3D Realms, GPL
+  FastDoom sound library: Victor Nieto (viti95) and contributors, GPL
   FastDoom (ideas and code being ported): Victor Nieto (viti95), GPL
   DOS/32A extender: Narech K.
 

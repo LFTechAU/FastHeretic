@@ -28,12 +28,13 @@ jobs:
 
       - name: Bind DOS/32A extender
         run: |
-          for f in build/*/fhtic*.exe build/*/fhm*.exe; do ./bind.sh $f; done
+          ./build.sh setup
+          for f in build/*/fhtic*.exe build/*/fhm*.exe build/setup/fhsetup.exe; do ./bind.sh $f; done
 
       - name: Collect
         run: |
           mkdir dist
-          cp build/*/FHTIC*.EXE build/*/FHM*.EXE dist/
+          cp build/*/FHTIC*.EXE build/*/FHM*.EXE build/setup/FHSETUP.EXE dist/
           cp build/stock-13h/htic13f.exe dist/HTIC13F.EXE
           cp README.md dist/README.TXT
           cp heretic/license.txt dist/LICENSE.TXT

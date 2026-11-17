@@ -1,7 +1,7 @@
 #!/bin/bash
 # FastHeretic build script (OpenWatcom 2 on Linux)
 # Usage: ./build.sh [cpu] [mode]
-#   cpu  = 386 (default) | 486 | 586 | stock
+#   cpu  = 386 (default) | 486 | 586 | stock     (or: ./build.sh setup)
 #   mode = y (default, Mode Y straight to video memory) | 13h | yh (half height) | vbr vbd (VESA)
 #          | cga bwc c16 512 cah cvb ega hgc inc pcp 400 (FastDoom modes)
 #          | t1 t12 t25 t43 t50 mda cda vt (text modes)
@@ -9,6 +9,18 @@
 # "stock" = plain Heretic v1.3 settings (original compiler flags, DOS/4GW,
 # FastHeretic options off) with only the -timedemo fix: a fair baseline.
 set -e
+
+# ./build.sh setup : the FHSETUP.EXE setup program
+if [ "$1" = setup ]; then
+  ROOT=$(cd "$(dirname "$0")" && pwd)
+  mkdir -p "$ROOT/build/setup" && cd "$ROOT/build/setup"
+  export INCLUDE="$WATCOM/h"
+  wcc386 -3r -ox -zq -bt=dos -fo=fhsetup.obj "$ROOT/setup/fhsetup.c"
+  wlink option quiet format os2 le option stub=$ROOT/dos32a/STUB32A.EXE \
+    libpath %WATCOM%/lib386 libpath %WATCOM%/lib386/dos name fhsetup file fhsetup.obj
+  echo "Built $ROOT/build/setup/fhsetup.exe"
+  exit 0
+fi
 
 CPU=${1:-386}
 MODE=${2:-y}
