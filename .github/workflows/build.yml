@@ -21,19 +21,19 @@ jobs:
 
       - name: Build
         run: |
-          for m in y yh 13h cga bwc c16 512 cah cvb ega hgc inc pcp 400 t1 t12 t25 t43 t50 mda vbr vbd; do ./build.sh 386 $m; done
+          for m in y yh 13h cga bwc c16 512 cah cvb ega hgc inc pcp 400 t1 t12 t25 t43 t50 mda vbr vbd x m240r m240d m300r m300d m384r m384d m400r m400d m480r m480d m600r m600d m768r m768d m800r m800d m1024r m1024d m1200r m1200d; do ./build.sh 386 $m; done
           ./build.sh 486 y
           ./build.sh 586 y
           ./build.sh stock
 
       - name: Bind DOS/32A extender
         run: |
-          for f in build/*/fhtic*.exe; do ./bind.sh $f; done
+          for f in build/*/fhtic*.exe build/*/fhm*.exe; do ./bind.sh $f; done
 
       - name: Collect
         run: |
           mkdir dist
-          cp build/*/FHTIC*.EXE dist/
+          cp build/*/FHTIC*.EXE build/*/FHM*.EXE dist/
           cp build/stock-13h/htic13f.exe dist/HTIC13F.EXE
           cp README.md dist/README.TXT
           cp heretic/license.txt dist/LICENSE.TXT

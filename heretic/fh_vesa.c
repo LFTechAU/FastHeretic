@@ -87,9 +87,15 @@ static void *MapPhysical(unsigned phys, unsigned size)
 #define W(p, o) (*(unsigned short *)((byte *)(p) + (o)))
 #define D(p, o) (*(unsigned *)((byte *)(p) + (o)))
 
-// Set up a VESA 320x200x8 mode. Returns false if there is none, in which
+// Set up a VESA w x h x 8 mode. Returns false if there is none, in which
 // case plain mode 13h is set instead.
-int FHE_Init(int wantpages)
+static int fhe_h = 200;
+static unsigned fhe_winseg = 0xA000;
+static int fhe_gran = 64;        // window granularity in KB
+static int fhe_bank = -1;
+static void SetBank(int bank);
+
+int FHE_Init(int w, int h, int wantpages)
 {
 	union REGS regs;
 	unsigned short modes[256];
@@ -102,6 +108,7 @@ int FHE_Init(int wantpages)
 	fhe_pages = 1;
 	fhe_linear = 0;
 	fhe_mode = 0x13;
+	fhe_h = h;
 
 	memset(&regs, 0, sizeof(regs));
 	regs.w.ax = 0x0100;             // DPMI: allocate DOS memory
@@ -136,7 +143,7 @@ int FHE_Init(int wantpages)
 			continue;
 		if (!(W(info, 0) & 1) || !(W(info, 0) & 0x10))
 			continue;                   // not supported or not graphics
-		if (W(info, 0x12) != 320 || W(info, 0x14) != 200 || info[0x19] != 8)
+		if (W(info, 0x12) != w || W(info, 0x14) != h || info[0x19] != 8)
 			continue;
 		if (info[0x1b] != 4)
 			continue;                   // not packed pixel
@@ -151,10 +158,12 @@ int FHE_Init(int wantpages)
 	fhe_mode = best;
 	fhe_pitch = W(info, 0x10);
 	fhe_pages = info[0x1d] + 1;
+	fhe_gran = W(info, 0x04) ? W(info, 0x04) : 64;
+	fhe_winseg = W(info, 0x08) ? W(info, 0x08) : 0xA000;
 	if ((W(info, 0) & 0x80) && D(info, 0x28) && !M_CheckParm("-noLFB"))
 	{
 		byte *p = MapPhysical(D(info, 0x28),
-			(fhe_pitch * 200 * (wantpages > 1 ? wantpages : 1) + 0xffff)
+			(fhe_pitch * h * (wantpages > 1 ? wantpages : 1) + 0xffff)
 			& ~0xffff);
 		if (p && VBE_Call(0x4f02, best | 0x4000, 0, 0, false, 0))
 		{
@@ -163,16 +172,18 @@ int FHE_Init(int wantpages)
 			return true;
 		}
 	}
-	// banked: 320x200 fits in the first 64 KB window
-	if (fhe_pitch * 200 <= 0x10000
-		&& VBE_Call(0x4f02, best, 0, 0, false, 0))
+	// banked: copies switch the 64 KB window as they go
+	if (VBE_Call(0x4f02, best, 0, 0, false, 0))
 	{
-		VBE_Call(0x4f05, 0, 0, 0, false, 0);
+		fhe_lfb = (byte *)(fhe_winseg << 4);
+		fhe_bank = -1;
 		fhe_pages = 1;
+		SetBank(0);
 		return true;
 	}
 
 fallback:
+	memset(&regs, 0, sizeof(regs));
 	regs.w.ax = 0x13;
 	int386(0x10, &regs, &regs);
 	fhe_lfb = (byte *)0xA0000;
@@ -183,25 +194,63 @@ fallback:
 	return false;
 }
 
-// Show page n (scan line n*200)
+// Show page n
 void FHE_ShowPage(int n, int waitvsync)
 {
 	if (fhe_mode == 0x13)
 		return;
-	VBE_Call(0x4f07, waitvsync ? 0x80 : 0, 0, n * 200, false, 0);
+	VBE_Call(0x4f07, waitvsync ? 0x80 : 0, 0, n * fhe_h, false, 0);
 }
 
-// Copy rows of a 320 wide buffer into the frame buffer page
-void FHE_CopyRows(byte *dest, byte *src, int y, int h)
+static void SetBank(int bank)
 {
-	if (fhe_pitch == SCREENWIDTH)
+	if (bank == fhe_bank)
+		return;
+	fhe_bank = bank;
+	VBE_Call(0x4f05, 0, 0, bank * (64 / fhe_gran), false, 0);
+}
+
+// Copy a rectangle of a buffer (srcpitch bytes per line) to the screen
+void FHE_CopyRect(byte *src, int srcpitch, int x, int y, int w, int h)
+{
+	unsigned off, chunk;
+	int len;
+	byte *s;
+
+	if (w <= 0 || h <= 0)
+		return;
+	src += y * srcpitch + x;
+	if (fhe_linear || fhe_mode == 0x13)
 	{
-		memcpy(dest + y * SCREENWIDTH, src + y * SCREENWIDTH,
-			h * SCREENWIDTH);
+		byte *d = fhe_lfb + y * fhe_pitch + x;
+		if (w == srcpitch && w == fhe_pitch)
+		{
+			memcpy(d, src, w * h);
+			return;
+		}
+		for (; h > 0; h--, src += srcpitch, d += fhe_pitch)
+			memcpy(d, src, w);
 		return;
 	}
-	for (; h > 0; h--, y++)
-		memcpy(dest + y * fhe_pitch, src + y * SCREENWIDTH, SCREENWIDTH);
+	for (; h > 0; h--, y++, src += srcpitch)
+	{
+		off = y * fhe_pitch + x;
+		s = src;
+		for (len = w; len > 0; len -= chunk, off += chunk, s += chunk)
+		{
+			chunk = 0x10000 - (off & 0xffff);
+			if (chunk > len)
+				chunk = len;
+			SetBank(off >> 16);
+			memcpy(fhe_lfb + (off & 0xffff), s, chunk);
+		}
+	}
+}
+
+// Copy rows of a 320 wide buffer to the screen
+void FHE_CopyRows(byte *dest, byte *src, int y, int h)
+{
+	FHE_CopyRect(src, SCREENWIDTH, 0, y, SCREENWIDTH, h);
 }
 
 #endif

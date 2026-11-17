@@ -16,8 +16,12 @@
 
 BITS 32
 
+%ifndef SCREENWIDTH
 %define SCREENWIDTH   320
+%endif
+%ifndef SCREENHEIGHT
 %define SCREENHEIGHT  200
+%endif
 
 OP_RET      equ 0xC3
 OP_MOVAL    equ 0x8A

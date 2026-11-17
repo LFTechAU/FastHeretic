@@ -1113,7 +1113,7 @@ void I_InitGraphics(void)
 #if defined(FH_DIRECT)
 	FHY_InitGraphics();
 #elif defined(FH_VBR)
-	FHE_Init(1);
+	FHE_Init(SCREENWIDTH, SCREENHEIGHT, 1);
 	pcscreen = destscreen = fhe_lfb;
 #elif defined(FH_BACKBUF)
 	FHV_Init();
@@ -2044,7 +2044,7 @@ byte *I_ZoneBase (int *size)
 	printf ("DPMI memory: 0x%x, ",heap);
 
 	{ // FastHeretic: -limitram KB caps the zone, -freeram KB leaves memory free
-		int maxheap = 0x800000;
+		int maxheap = 0x800000 + (RENDERWIDTH > 320 ? RENDERWIDTH*RENDERHEIGHT*2 : 0);
 		i = M_CheckParm("-limitram");
 		if (i && i < myargc - 1 && atoi(myargv[i + 1]) > 0)
 			maxheap = atoi(myargv[i + 1]) * 1024;
@@ -2057,8 +2057,8 @@ byte *I_ZoneBase (int *size)
 	do
 	{
 		heap -= 0x10000;                // leave 64k alone
-		if (heap > 0x800000)
-			heap = 0x800000;
+		if (heap > 0x800000 + (RENDERWIDTH > 320 ? RENDERWIDTH*RENDERHEIGHT*2 : 0))
+			heap = 0x800000 + (RENDERWIDTH > 320 ? RENDERWIDTH*RENDERHEIGHT*2 : 0);
 		ptr = malloc (heap);
 	} while (!ptr);
 

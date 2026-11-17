@@ -17,10 +17,25 @@ Executables
   FHTIC13H.EXE Mode 13h, built for 386
   FHTICH.EXE   Mode Y at half height (320x100, each line shown twice
                as tall): about a quarter faster again
+  FHTICX.EXE   Mode X 320x240, square pixels, drawn straight into video
+               memory with 3 pages (a taller view than 320x200)
   FHTICVBD.EXE VESA 320x200 linear frame buffer, drawn straight into
                video memory with 3 pages (VESA 2.0 cards, or UNIVBE)
   FHTICVBR.EXE VESA 320x200, copied from system memory each frame
                (-noLFB to use the 64 KB window instead of linear)
+
+High resolution VESA (the 3D view at full resolution; menus and the
+status bar are scaled up). D = straight into video memory, 3 pages (needs
+a linear frame buffer); R = drawn in memory and copied (any VESA card):
+
+  FHM240D/R    320x240      FHM600D/R    800x600
+  FHM300D/R    400x300      FHM768D/R    1024x768
+  FHM384D/R    512x384      FHM800D/R    1280x800
+  FHM400D/R    640x400      FHM1024D/R   1280x1024
+  FHM480D/R    640x480      FHM1200D/R   1600x1200
+
+  Most cards from the 386/486 era only offer some of these sizes; a VESA
+  driver such as UNIVBE adds the rest.
 
 Other video cards (all built for 386, from FastDoom's video code):
 

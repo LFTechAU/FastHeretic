@@ -30,8 +30,8 @@ fixed_t		pspritescale, pspriteiscale;
 lighttable_t	**spritelights;
 
 // constant arrays used for psprite clipping and initializing clipping
-short	negonearray[SCREENWIDTH];
-short	screenheightarray[SCREENWIDTH];
+short	negonearray[RENDERWIDTH];
+short	screenheightarray[RENDERWIDTH];
 
 /*
 ===============================================================================
@@ -239,7 +239,7 @@ void R_InitSprites (char **namelist)
 {
 	int		i;
 
-	for (i=0 ; i<SCREENWIDTH ; i++)
+	for (i=0 ; i<RENDERWIDTH ; i++)
 	{
 		negonearray[i] = -1;
 	}
@@ -709,7 +709,7 @@ void R_DrawPSprite (pspdef_t *psp)
 	vis->mobjflags = 0;
 	vis->psprite = true;
 	vis->texturemid = (BASEYCENTER<<FRACBITS)+FRACUNIT/2-(psp->sy-spritetopoffset[lump]);
-	if(viewheight == SCREENHEIGHT)
+	if(viewheight == RENDERHEIGHT)
 	{
 		vis->texturemid -= PSpriteSY[players[consoleplayer].readyweapon];
 	}
@@ -866,7 +866,7 @@ void R_SortVisSprites (void)
 void R_DrawSprite (vissprite_t *spr)
 {
 	drawseg_t		*ds;
-	short			clipbot[SCREENWIDTH], cliptop[SCREENWIDTH];
+	short			clipbot[RENDERWIDTH], cliptop[RENDERWIDTH];
 	int				x, r1, r2;
 	fixed_t			scale, lowscale;
 	int				silhouette;

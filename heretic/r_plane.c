@@ -27,15 +27,15 @@ short			openings[MAXOPENINGS], *lastopening;
 // floorclip starts out SCREENHEIGHT
 // ceilingclip starts out -1
 //
-short		floorclip[SCREENWIDTH];
-short		ceilingclip[SCREENWIDTH];
+short		floorclip[RENDERWIDTH];
+short		ceilingclip[RENDERWIDTH];
 
 //
 // spanstart holds the start of a plane span
 // initialized to 0 at start
 //
-int			spanstart[SCREENHEIGHT];
-int			spanstop[SCREENHEIGHT];
+int			spanstart[RENDERHEIGHT];
+int			spanstop[RENDERHEIGHT];
 
 //
 // texture mapping
@@ -43,14 +43,14 @@ int			spanstop[SCREENHEIGHT];
 lighttable_t	**planezlight;
 fixed_t		planeheight;
 
-fixed_t		yslope[SCREENHEIGHT];
-fixed_t		distscale[SCREENWIDTH];
+fixed_t		yslope[RENDERHEIGHT];
+fixed_t		distscale[RENDERWIDTH];
 fixed_t		basexscale, baseyscale;
 
-fixed_t		cachedheight[SCREENHEIGHT];
-fixed_t		cacheddistance[SCREENHEIGHT];
-fixed_t		cachedxstep[SCREENHEIGHT];
-fixed_t		cachedystep[SCREENHEIGHT];
+fixed_t		cachedheight[RENDERHEIGHT];
+fixed_t		cacheddistance[RENDERHEIGHT];
+fixed_t		cachedxstep[RENDERHEIGHT];
+fixed_t		cachedystep[RENDERHEIGHT];
 
 
 /*
@@ -256,7 +256,7 @@ visplane_t *R_FindPlane(fixed_t height, int picnum,
 	check->picnum = picnum;
 	check->lightlevel = lightlevel;
 	check->special = special;
-	check->minx = SCREENWIDTH;
+	check->minx = RENDERWIDTH;
 	check->maxx = -1;
 	memset(check->top,0xff,sizeof(check->top));
 	return(check);
@@ -299,7 +299,7 @@ visplane_t *R_CheckPlane (visplane_t *pl, int start, int stop)
 	}
 
 	for (x=intrl ; x<= intrh ; x++)
-		if (pl->top[x] != 0xff)
+		if (pl->top[x] != VPNONE)
 			break;
 
 	if (x > intrh)
@@ -475,8 +475,8 @@ extern int columnofs[MAXWIDTH];
 			ds_colormap = fixedcolormap ? fixedcolormap
 				: planezlight[MAXLIGHTZ/4];
 
-		pl->top[pl->maxx+1] = 0xff;
-		pl->top[pl->minx-1] = 0xff;
+		pl->top[pl->maxx+1] = VPNONE;
+		pl->top[pl->minx-1] = VPNONE;
 		
 		stop = pl->maxx + 1;
 		for (x=pl->minx ; x<= stop ; x++)

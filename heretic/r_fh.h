@@ -42,9 +42,15 @@ void FHV_Update(void);
 void FHV_Shutdown(void);
 #endif
 
-#if defined(FH_MODEY) || defined(FH_VBD)
-// fh_modey.c: Mode Y, and VESA direct (FH_VBD)
+#if defined(FH_MODEY) || defined(FH_VBD) || (defined(FH_VBR) && defined(FH_HIRES))
+// fh_modey.c: Mode Y, Mode X and VESA direct (FH_VBD)
+// fh_hires.c: high resolution VESA
 #define FH_DIRECT
+#if defined(FH_MODEY) || defined(FH_HIRES)
+#define FH_PATCHDIRECT               // overlays go through FHY_DrawPatch
+#endif
+extern int fhy_sbmode;               // status bar overlays: anchor at the bottom
+extern byte *fh_bordbuf;             // high res: border around a small view
 extern byte *fh_planar;      // set: overlays go straight into this page
 extern int fh_directframe;   // this frame's view was drawn into VRAM
 void FHY_InitGraphics(void);
@@ -64,7 +70,8 @@ int FHY_Direct(void);
 // fh_vesa.c
 extern byte *fhe_lfb;
 extern int fhe_pitch;
-int FHE_Init(int wantpages);
+int FHE_Init(int w, int h, int wantpages);
+void FHE_CopyRect(byte *src, int srcpitch, int x, int y, int w, int h);
 void FHE_CopyRows(byte *dest, byte *src, int y, int h);
 #endif
 

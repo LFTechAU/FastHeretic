@@ -46,7 +46,7 @@ int			viewangletox[FINEANGLES/2];
 
 // The xtoviewangleangle[] table maps a screen pixel to the lowest viewangle
 // that maps back to x ranges from clipangle to -clipangle
-angle_t		xtoviewangle[SCREENWIDTH+1];
+angle_t		xtoviewangle[RENDERWIDTH+1];
 
 // the finetangentgent[angle+FINEANGLES/4] table holds the fixed_t tangent
 // values for view angles, ranging from MININT to 0 to MAXINT.
@@ -519,8 +519,8 @@ void R_InitLightTables (void)
 		startmap = ((LIGHTLEVELS-1-i)*2)*NUMCOLORMAPS/LIGHTLEVELS;
 		for (j=0 ; j<MAXLIGHTZ ; j++)
 		{
-			scale = FixedDiv ((SCREENWIDTH/2*FRACUNIT), (j+1)<<LIGHTZSHIFT);
-			scale >>= LIGHTSCALESHIFT;
+			scale = FixedDiv ((320/2*FRACUNIT), (j+1)<<LIGHTZSHIFT);
+			scale >>= 12;
 			level = startmap - scale/DISTMAP;
 			if (level < 0)
 				level = 0;
@@ -570,13 +570,18 @@ void R_ExecuteSetViewSize (void)
 
 	if (setblocks == 11)
 	{
-		scaledviewwidth = SCREENWIDTH;
-		viewheight = SCREENHEIGHT;
+		scaledviewwidth = RENDERWIDTH;
+		viewheight = RENDERHEIGHT;
 	}
 	else
 	{
+#ifdef FH_HIRES
+		scaledviewwidth = (setblocks*RENDERWIDTH/10) & ~7;
+		viewheight = (setblocks*FH_VAH/10) & ~1;
+#else
 		scaledviewwidth = setblocks*32;
 		viewheight = (setblocks*158/10);
+#endif
 	}
 
 	detailshift = setdetail;
@@ -600,8 +605,8 @@ void R_ExecuteSetViewSize (void)
 //
 // psprite scales
 //
-	pspritescale = FRACUNIT*viewwidth/SCREENWIDTH;
-	pspriteiscale = FRACUNIT*SCREENWIDTH/viewwidth;
+	pspritescale = FRACUNIT*viewwidth/320;
+	pspriteiscale = FRACUNIT*320/viewwidth;
 
 //
 // thing clipping
@@ -633,7 +638,7 @@ void R_ExecuteSetViewSize (void)
 		startmap = ((LIGHTLEVELS-1-i)*2)*NUMCOLORMAPS/LIGHTLEVELS;
 		for (j=0 ; j<MAXLIGHTSCALE ; j++)
 		{
-			level = startmap - j*SCREENWIDTH/(viewwidth<<detailshift)/DISTMAP;
+			level = startmap - j*(320<<FH_LSE)/(viewwidth<<detailshift)/DISTMAP;
 			if (level < 0)
 				level = 0;
 			if (level >= NUMCOLORMAPS)
@@ -752,10 +757,10 @@ void R_SetupFrame(player_t *player)
 	viewz = player->viewz;
 	
 #if (APPVER_HERETICREV < AV_HR_TIC12)
-	centery = viewheight/2+(player->lookdir)*screenblocks/10;
+	centery = viewheight/2+(player->lookdir)*screenblocks*FH_LOOKS/10;
 	centeryfrac = centery<<FRACBITS;
 #else // VERSIONS RESTORATION: yslope change was in R_MapPlane
-	tempCentery = viewheight/2+(player->lookdir)*screenblocks/10;
+	tempCentery = viewheight/2+(player->lookdir)*screenblocks*FH_LOOKS/10;
 	if(centery != tempCentery)
 	{
 		centery = tempCentery;

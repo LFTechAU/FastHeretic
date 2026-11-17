@@ -61,7 +61,7 @@ void NAME(void) \
 	do \
 	{ \
 		PUT(dest, colormap[source[(frac >> FRACBITS) & 127]]); \
-		dest += SCREENWIDTH; \
+		dest += RENDERWIDTH; \
 		frac += fracstep; \
 	} while (count--); \
 }
@@ -80,7 +80,7 @@ void NAME(void) \
 	do \
 	{ \
 		PUT(dest, dc_colormap[dc_translation[dc_source[frac >> FRACBITS]]]); \
-		dest += SCREENWIDTH; \
+		dest += RENDERWIDTH; \
 		frac += fracstep; \
 	} while (count--); \
 }
@@ -100,7 +100,7 @@ void NAME(void) \
 	{ \
 		PUT(dest, tinttable[((*dest) << 8) + \
 			dc_colormap[dc_source[(frac >> FRACBITS) & 127]]]); \
-		dest += SCREENWIDTH; \
+		dest += RENDERWIDTH; \
 		frac += fracstep; \
 	} while (count--); \
 }
@@ -113,7 +113,7 @@ void NAME(void) \
 	{ \
 		PUT(dest, tinttable[((*dest) << 8) + \
 			dc_colormap[dc_translation[dc_source[frac >> FRACBITS]]]]); \
-		dest += SCREENWIDTH; \
+		dest += RENDERWIDTH; \
 		frac += fracstep; \
 	} while (count--); \
 }
@@ -133,7 +133,7 @@ void NAME(void) \
 		if (odd) \
 			PUT(dest, SOURCE); \
 		odd ^= 1; \
-		dest += SCREENWIDTH; \
+		dest += RENDERWIDTH; \
 		frac += fracstep; \
 	} while (count--); \
 }
@@ -164,14 +164,31 @@ void NAME(void) \
 	count = dc_yh - dc_yl; \
 	if (count < 0) return; \
 	dest = ylookup[dc_yl] + columnofs[dc_x << (SHIFT)]; \
+	SKYLOOP(PUT) \
+}
+
+#ifdef FH_HIRES
+// taller views: stretch the 200 row sky to fit, and never read past it
+#define SKYLOOP(PUT) \
+	{ fixed_t frac = dc_texturemid + (dc_yl - centery) * FH_SKYISCALE; int r; \
+	do \
+	{ \
+		r = frac >> FRACBITS; \
+		if (r < 0) r = 0; else if (r > 199) r = 199; \
+		PUT(dest, dc_source[r]); \
+		frac += FH_SKYISCALE; \
+		dest += RENDERWIDTH; \
+	} while (count--); }
+#else
+#define SKYLOOP(PUT) \
 	source = dc_source + (dc_texturemid >> FRACBITS) + (dc_yl - centery); \
 	do \
 	{ \
 		PUT(dest, *source); \
 		source++; \
-		dest += SCREENWIDTH; \
-	} while (count--); \
-}
+		dest += RENDERWIDTH; \
+	} while (count--);
+#endif
 
 MAKE_SKYCOLUMN(R_DrawSkyColumn, 0, PUT1)
 MAKE_SKYCOLUMN(R_DrawSkyColumnLow, 1, PUT2)
@@ -188,7 +205,7 @@ void NAME(void) \
 	do \
 	{ \
 		PUT(dest, c); \
-		dest += SCREENWIDTH; \
+		dest += RENDERWIDTH; \
 	} while (count--); \
 }
 

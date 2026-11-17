@@ -218,7 +218,7 @@ static void FH_DrawFPS(void)
 	if (fh_showfps)
 	{
 		sprintf(text, "%d", fps_value);
-		MN_DrTextA(text, viewwindowx + scaledviewwidth - 20, viewwindowy + 2);
+		MN_DrTextA(text, FH_VIRTX(viewwindowx + scaledviewwidth) - 20, FH_VIRTY(viewwindowy) + 2);
 	}
 }
 
@@ -259,7 +259,9 @@ void D_Display(void)
 			fh_directframe = 1;
 			if (screenblocks > 10)
 				FHY_OverlayOn();
+			fhy_sbmode = 1;
 			SB_Drawer();
+			fhy_sbmode = 0;
 			FHY_OverlayOff();
 			FHY_Composite();
 			FHY_OverlayOn();
@@ -288,7 +290,7 @@ void D_Display(void)
 	{
 		if(!netgame)
 		{
-			V_DrawPatch(160, viewwindowy+5, W_CacheLumpName("PAUSED",
+			V_DrawPatch(160, FH_VIRTY(viewwindowy)+5, W_CacheLumpName("PAUSED",
 				PU_CACHE));
 		}
 		else

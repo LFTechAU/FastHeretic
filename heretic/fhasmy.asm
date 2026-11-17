@@ -14,7 +14,9 @@
 BITS 32
 
 %define PLANEWIDTH    80
+%ifndef SCREENHEIGHT
 %define SCREENHEIGHT  200
+%endif
 %define MAXSPAN       80
 
 extern _dc_colormap

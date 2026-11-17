@@ -51,7 +51,7 @@ void R_DrawColumn (void)
 		return;
 				
 #ifdef RANGECHECK
-	if ((unsigned)dc_x >= SCREENWIDTH || dc_yl < 0 || dc_yh >= SCREENHEIGHT)
+	if ((unsigned)dc_x >= RENDERWIDTH || dc_yl < 0 || dc_yh >= RENDERHEIGHT)
 		I_Error ("R_DrawColumn: %i to %i at %i", dc_yl, dc_yh, dc_x);
 #endif
 
@@ -63,7 +63,7 @@ void R_DrawColumn (void)
 	do
 	{
 		*dest = dc_colormap[dc_source[(frac>>FRACBITS)&127]];
-		dest += SCREENWIDTH;
+		dest += RENDERWIDTH;
 		frac += fracstep;
 	} while (count--);
 }
@@ -82,7 +82,7 @@ void R_DrawColumnLow (void)
 		return;
 				
 #ifdef RANGECHECK
-	if ((unsigned)dc_x >= SCREENWIDTH || dc_yl < 0 || dc_yh >= SCREENHEIGHT)
+	if ((unsigned)dc_x >= RENDERWIDTH || dc_yl < 0 || dc_yh >= RENDERHEIGHT)
 		I_Error ("R_DrawColumn: %i to %i at %i", dc_yl, dc_yh, dc_x);
 //	dccount++;
 #endif
@@ -95,7 +95,7 @@ void R_DrawColumnLow (void)
 	do
 	{
 		*dest = dc_colormap[dc_source[(frac>>FRACBITS)&127]];
-		dest += SCREENWIDTH;
+		dest += RENDERWIDTH;
 		frac += fracstep;
 	} while (count--);
 }
@@ -103,7 +103,7 @@ void R_DrawColumnLow (void)
 
 #define FUZZTABLE	50
 
-#define FUZZOFF	(SCREENWIDTH)
+#define FUZZOFF	(RENDERWIDTH)
 int		fuzzoffset[FUZZTABLE] = {
 FUZZOFF,-FUZZOFF,FUZZOFF,-FUZZOFF,FUZZOFF,FUZZOFF,-FUZZOFF,FUZZOFF,FUZZOFF,-FUZZOFF,FUZZOFF,FUZZOFF,FUZZOFF,-FUZZOFF,FUZZOFF,FUZZOFF,FUZZOFF,-FUZZOFF,-FUZZOFF,-FUZZOFF,-FUZZOFF,FUZZOFF,-FUZZOFF,-FUZZOFF,FUZZOFF,FUZZOFF,FUZZOFF,FUZZOFF,-FUZZOFF,FUZZOFF,-FUZZOFF,FUZZOFF,FUZZOFF,-FUZZOFF,-FUZZOFF,FUZZOFF,FUZZOFF,-FUZZOFF,-FUZZOFF,-FUZZOFF,-FUZZOFF,FUZZOFF,FUZZOFF,FUZZOFF,FUZZOFF,-FUZZOFF,FUZZOFF,FUZZOFF,-FUZZOFF,FUZZOFF
 };
@@ -125,7 +125,7 @@ void R_DrawFuzzColumn (void)
 		return;
 				
 #ifdef RANGECHECK
-	if ((unsigned)dc_x >= SCREENWIDTH || dc_yl < 0 || dc_yh >= SCREENHEIGHT)
+	if ((unsigned)dc_x >= RENDERWIDTH || dc_yl < 0 || dc_yh >= RENDERHEIGHT)
 		I_Error ("R_DrawFuzzColumn: %i to %i at %i", dc_yl, dc_yh, dc_x);
 #endif
 
@@ -140,7 +140,7 @@ void R_DrawFuzzColumn (void)
 		*dest = colormaps[6*256+dest[fuzzoffset[fuzzpos]]];
 		if (++fuzzpos == FUZZTABLE)
 			fuzzpos = 0;
-		dest += SCREENWIDTH;
+		dest += RENDERWIDTH;
 		frac += fracstep;
 	} while (count--);
 */
@@ -154,7 +154,7 @@ void R_DrawFuzzColumn (void)
 //		*dest = //tinttable[((*dest)<<8)+colormaps[dc_source[(frac>>FRACBITS)&127]]];
 
 //		*dest = dc_colormap[dc_source[(frac>>FRACBITS)&127]];
-		dest += SCREENWIDTH;
+		dest += RENDERWIDTH;
 		frac += fracstep;
 	} while(count--);
 }
@@ -181,7 +181,7 @@ void R_DrawTranslatedColumn (void)
 		return;
 				
 #ifdef RANGECHECK
-	if ((unsigned)dc_x >= SCREENWIDTH || dc_yl < 0 || dc_yh >= SCREENHEIGHT)
+	if ((unsigned)dc_x >= RENDERWIDTH || dc_yl < 0 || dc_yh >= RENDERHEIGHT)
 		I_Error ("R_DrawColumn: %i to %i at %i", dc_yl, dc_yh, dc_x);
 #endif
 
@@ -193,7 +193,7 @@ void R_DrawTranslatedColumn (void)
 	do
 	{
 		*dest = dc_colormap[dc_translation[dc_source[frac>>FRACBITS]]];
-		dest += SCREENWIDTH;
+		dest += RENDERWIDTH;
 		frac += fracstep;
 	} while (count--);
 }
@@ -209,7 +209,7 @@ void R_DrawTranslatedFuzzColumn (void)
 		return;
 				
 #ifdef RANGECHECK
-	if ((unsigned)dc_x >= SCREENWIDTH || dc_yl < 0 || dc_yh >= SCREENHEIGHT)
+	if ((unsigned)dc_x >= RENDERWIDTH || dc_yl < 0 || dc_yh >= RENDERHEIGHT)
 		I_Error ("R_DrawColumn: %i to %i at %i", dc_yl, dc_yh, dc_x);
 #endif
 
@@ -222,7 +222,7 @@ void R_DrawTranslatedFuzzColumn (void)
 	{
 		*dest = tinttable[((*dest)<<8)
 			+dc_colormap[dc_translation[dc_source[frac>>FRACBITS]]]];
-		dest += SCREENWIDTH;
+		dest += RENDERWIDTH;
 		frac += fracstep;
 	} while (count--);
 }
@@ -291,8 +291,8 @@ void R_DrawSpan (void)
 	int			count, spot;
 	
 #ifdef RANGECHECK
-	if (ds_x2 < ds_x1 || ds_x1<0 || ds_x2>=SCREENWIDTH 
-	|| (unsigned)ds_y>SCREENHEIGHT)
+	if (ds_x2 < ds_x1 || ds_x1<0 || ds_x2>=RENDERWIDTH 
+	|| (unsigned)ds_y>RENDERHEIGHT)
 		I_Error ("R_DrawSpan: %i to %i at %i",ds_x1,ds_x2,ds_y);
 //	dscount++;
 #endif
@@ -321,8 +321,8 @@ void R_DrawSpanLow (void)
 	int			count, spot;
 	
 #ifdef RANGECHECK
-	if (ds_x2 < ds_x1 || ds_x1<0 || ds_x2>=SCREENWIDTH 
-	|| (unsigned)ds_y>SCREENHEIGHT)
+	if (ds_x2 < ds_x1 || ds_x1<0 || ds_x2>=RENDERWIDTH 
+	|| (unsigned)ds_y>RENDERHEIGHT)
 		I_Error ("R_DrawSpan: %i to %i at %i",ds_x1,ds_x2,ds_y);
 //	dscount++;
 #endif
@@ -355,15 +355,19 @@ void R_InitBuffer (int width, int height)
 {
 	int		i;
 	
-	viewwindowx = (SCREENWIDTH-width) >> 1;
+	viewwindowx = ((RENDERWIDTH-width) >> 1) & ~3;
 	for (i=0 ; i<width ; i++)
 		columnofs[i] = viewwindowx + i;
-	if (width == SCREENWIDTH)
+	if (width == RENDERWIDTH)
 		viewwindowy = 0;
 	else
+#ifdef FH_HIRES
+		viewwindowy = (FH_VAH-height) >> 1;
+#else
 		viewwindowy = (SCREENHEIGHT-SBARHEIGHT-height) >> 1;
+#endif
 	for (i=0 ; i<height ; i++)
-		ylookup[i] = screen + (i+viewwindowy)*SCREENWIDTH;
+		ylookup[i] = screen + (i+viewwindowy)*RENDERWIDTH;
 }
 
 
@@ -378,6 +382,7 @@ void R_InitBuffer (int width, int height)
 
 boolean BorderNeedRefresh;
 
+#ifndef FH_HIRES // fh_hires.c draws the border at full resolution
 void R_DrawViewBorder (void)
 {
 	byte	*src, *dest;
@@ -430,6 +435,7 @@ void R_DrawViewBorder (void)
 	V_DrawPatch(viewwindowx-4, viewwindowy+viewheight, 
 		W_CacheLumpName("bordbl", PU_CACHE));
 }
+#endif
 
 /*
 ==================
@@ -442,6 +448,7 @@ void R_DrawViewBorder (void)
 
 boolean BorderTopRefresh;
 
+#ifndef FH_HIRES
 void R_DrawTopBorder (void)
 {
 	byte	*src, *dest;
@@ -494,5 +501,6 @@ void R_DrawTopBorder (void)
 			W_CacheLumpName("bordtr", PU_CACHE));
 	}
 }
+#endif
 
 
