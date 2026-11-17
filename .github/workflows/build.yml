@@ -44,3 +44,41 @@ jobs:
         with:
           name: FastHeretic-${{ github.run_number }}
           path: dist/
+
+  fasthexen:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install OpenWatcom 2
+        uses: open-watcom/setup-watcom@v0
+        with:
+          version: "2.0"
+
+      - name: Install NASM and DOSBox
+        run: sudo apt-get update && sudo apt-get install -y nasm dosbox
+
+      - name: Build
+        run: |
+          for m in y yh 13h cga bwc c16 512 cah cvb ega hgc inc pcp 400 t1 t12 t25 t43 t50 mda cda vt vbr vbd x m240r m240d m300r m300d m384r m384d m400r m400d m480r m480d m600r m600d m768r m768d m800r m800d m1024r m1024d m1200r m1200d; do ./buildhx.sh 386 $m; done
+          ./buildhx.sh 486 y
+          ./buildhx.sh 586 y
+          ./buildhx.sh setup
+
+      - name: Bind DOS/32A extender
+        run: |
+          for f in build/hx*/fhex*.exe build/hx*/fxm*.exe build/hxsetup/fhxsetup.exe; do ./bind.sh $f; done
+
+      - name: Collect
+        run: |
+          mkdir dist
+          cp build/hx*/FHEX*.EXE build/hx*/FXM*.EXE build/hxsetup/FHXSETUP.EXE dist/
+          cp README-HEXEN.md dist/README.TXT
+          cp bench/*.BNC dist/
+          sed 's/FHTIC\*.EXE FHM\*.EXE/FHEX*.EXE FXM*.EXE/; s/FastHeretic/FastHexen/g' bench/BENCH.BAT > dist/BENCH.BAT
+          cp hexen/license.txt dist/LICENSE.TXT
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FastHexen-${{ github.run_number }}
+          path: dist/

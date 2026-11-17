@@ -19,8 +19,19 @@
 #include <conio.h>
 #include <i86.h>
 
+#ifdef FH_HEXEN
+// FHXSETUP.EXE: the same for FastHexen and HEXEN.CFG
+#define CFGNAME "HEXEN.CFG"
+#define GAMENAME "FastHexen"
+#define VERSION "0.1"
+// Hexen has its CD music card at 10, so FastDoom's extra cards are one up
+#define X(n) ((n) >= 10 ? (n) + 1 : (n))
+#else
 #define CFGNAME "HERETIC.CFG"
+#define GAMENAME "FastHeretic"
 #define VERSION "0.7"
+#define X(n) (n)
+#endif
 
 //--------------------------------------------------------------------------
 // Text screen
@@ -221,47 +232,52 @@ typedef struct
 	const char *hint;
 } choice_t;
 
-// Card numbers as FastHeretic reads them (0-9 are Heretic's own)
+// Card numbers as FastHeretic reads them (0-9 are Heretic's own;
+// FastHexen's go through X(), see above)
 static choice_t sfxcards[] = {
-	{0, "None", "No sound effects."},
-	{3, "Sound Blaster", "Any Sound Blaster or compatible. Uses the port, IRQ and DMA below."},
-	{4, "Pro Audio Spectrum", "Media Vision Pro Audio Spectrum (needs MVSOUND.SYS)."},
-	{5, "Gravis UltraSound", "Needs the ULTRASND variable (set by the GUS install)."},
-	{9, "Sound Blaster AWE32", "Needs BLASTER with an E (EMU) setting."},
-	{10, "Ensoniq Soundscape", "Needs the SNDSCAPE variable (set by the Soundscape install)."},
-	{25, "Windows Sound System", "WSS / AD1848 / CS4231 codec cards."},
-	{28, "Adlib Gold", "Adlib Gold 1000 sampled sound."},
-	{2, "Adlib (OPL sampled)", "Plays the effects through the OPL2 chip. Rough, but works on a plain Adlib."},
-	{11, "Disney Sound Source", "On the printer port below."},
-	{14, "Covox / LPT DAC", "8-bit DAC on the printer port below."},
-	{12, "Tandy 3 voice", "Tandy / PCjr sound chip."},
-	{17, "Creative Music System", "Game Blaster / CMS at the Sound Blaster port."},
-	{18, "OPL2LPT", "OPL2 on the printer port below."},
-	{19, "OPL3LPT", "OPL3 on the printer port below."},
-	{15, "Sound Blaster direct", "Sound Blaster without DMA or IRQ. Slower, for awkward setups."},
-	{1, "PC speaker", "Plays the sampled effects through the PC speaker."},
-	{16, "PC speaker (PWM)", "Better quality PC speaker. Needs a fast machine."},
+	{X(0), "None", "No sound effects."},
+	{X(3), "Sound Blaster", "Any Sound Blaster or compatible. Uses the port, IRQ and DMA below."},
+	{X(4), "Pro Audio Spectrum", "Media Vision Pro Audio Spectrum (needs MVSOUND.SYS)."},
+	{X(5), "Gravis UltraSound", "Needs the ULTRASND variable (set by the GUS install)."},
+	{X(9), "Sound Blaster AWE32", "Needs BLASTER with an E (EMU) setting."},
+	{X(10), "Ensoniq Soundscape", "Needs the SNDSCAPE variable (set by the Soundscape install)."},
+	{X(25), "Windows Sound System", "WSS / AD1848 / CS4231 codec cards."},
+	{X(28), "Adlib Gold", "Adlib Gold 1000 sampled sound."},
+	{X(2), "Adlib (OPL sampled)", "Plays the effects through the OPL2 chip. Rough, but works on a plain Adlib."},
+	{X(11), "Disney Sound Source", "On the printer port below."},
+	{X(14), "Covox / LPT DAC", "8-bit DAC on the printer port below."},
+	{X(12), "Tandy 3 voice", "Tandy / PCjr sound chip."},
+	{X(17), "Creative Music System", "Game Blaster / CMS at the Sound Blaster port."},
+	{X(18), "OPL2LPT", "OPL2 on the printer port below."},
+	{X(19), "OPL3LPT", "OPL3 on the printer port below."},
+	{X(15), "Sound Blaster direct", "Sound Blaster without DMA or IRQ. Slower, for awkward setups."},
+	{X(1), "PC speaker", "Plays the sampled effects through the PC speaker."},
+	{X(16), "PC speaker (PWM)", "Better quality PC speaker. Needs a fast machine."},
 };
 
 static choice_t muscards[] = {
-	{0, "None", "No music."},
-	{3, "Sound Blaster (OPL)", "FM music on the Sound Blaster's OPL2/OPL3."},
-	{2, "Adlib", "FM music on an Adlib (OPL2)."},
-	{4, "Pro Audio Spectrum (OPL)", "FM music on the Pro Audio Spectrum."},
-	{6, "General MIDI (MPU-401)", "Roland SC-55, MT-32, Yamaha, wavetable boards... Uses the MIDI port below."},
-	{5, "Gravis UltraSound", "Needs the ULTRASND variable and the GUS patches."},
-	{9, "Sound Blaster AWE32", "Needs SYNTHGS.SBK in the game folder and BLASTER with E."},
-	{10, "Ensoniq Soundscape", "Needs the SNDSCAPE variable."},
-	{22, "Sound Blaster MIDI port", "MIDI out of the Sound Blaster's game port."},
-	{23, "Serial MIDI", "MIDI on a COM port. Set the MIDI port below to 3F8, 2F8, 3E8 or 2E8."},
-	{24, "LPT MIDI", "MIDI on the printer port below."},
-	{18, "OPL2LPT", "OPL2 on the printer port below."},
-	{19, "OPL3LPT", "OPL3 on the printer port below."},
-	{26, "IBM Music Feature", "IBM Music Feature Card."},
-	{27, "ESS ESFM", "ESS AudioDrive native FM."},
-	{17, "Creative Music System", "Game Blaster / CMS at the Sound Blaster port."},
+	{X(0), "None", "No music."},
+	{X(3), "Sound Blaster (OPL)", "FM music on the Sound Blaster's OPL2/OPL3."},
+	{X(2), "Adlib", "FM music on an Adlib (OPL2)."},
+	{X(4), "Pro Audio Spectrum (OPL)", "FM music on the Pro Audio Spectrum."},
+	{X(6), "General MIDI (MPU-401)", "Roland SC-55, MT-32, Yamaha, wavetable boards... Uses the MIDI port below."},
+	{X(5), "Gravis UltraSound", "Needs the ULTRASND variable and the GUS patches."},
+	{X(9), "Sound Blaster AWE32", "Needs SYNTHGS.SBK in the game folder and BLASTER with E."},
+	{X(10), "Ensoniq Soundscape", "Needs the SNDSCAPE variable."},
+	{X(22), "Sound Blaster MIDI port", "MIDI out of the Sound Blaster's game port."},
+	{X(23), "Serial MIDI", "MIDI on a COM port. Set the MIDI port below to 3F8, 2F8, 3E8 or 2E8."},
+	{X(24), "LPT MIDI", "MIDI on the printer port below."},
+	{X(18), "OPL2LPT", "OPL2 on the printer port below."},
+	{X(19), "OPL3LPT", "OPL3 on the printer port below."},
+	{X(26), "IBM Music Feature", "IBM Music Feature Card."},
+	{X(27), "ESS ESFM", "ESS AudioDrive native FM."},
+	{X(17), "Creative Music System", "Game Blaster / CMS at the Sound Blaster port."},
+#ifdef FH_HEXEN
+	{10, "CD audio", "Hexen's own CD music. Needs MSCDEX and the Hexen CD."},
+#else
 	{20, "CD audio", "Plays CD tracks: track 2 is the first song. Needs MSCDEX."},
 	{21, "WAV files", "MUSIC\\HERETIC\\MUS_n.RAW in the game folder (raw 8-bit mono)."},
+#endif
 };
 
 static choice_t sbports[] = {
@@ -367,7 +383,7 @@ static void DrawScreen(int sel, int changed)
 
 	Fill(0, 0, 80, 25, C_BACK, ' ');
 	Fill(0, 0, 80, 1, C_TITLE, ' ');
-	PutC(0, C_TITLE, "FastHeretic Setup " VERSION " by LFTech");
+	PutC(0, C_TITLE, GAMENAME " Setup " VERSION " by LFTech");
 
 	for (i = 0, it = items; i < NUMITEMS; i++, it++)
 	{

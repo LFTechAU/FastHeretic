@@ -488,6 +488,11 @@ static void HandleArgs(void)
 	ravpic = M_ParmExists("-ravpic");
 	artiskip = M_ParmExists("-artiskip");
 	debugmode = M_ParmExists("-debug");
+	if (M_ParmExists("-textstartup"))
+	{
+		extern int fh_textstartup;
+		fh_textstartup = 1;
+	}
 	deathmatch = M_ParmExists("-deathmatch");
 	cdrom = M_ParmExists("-cdrom");
 #if (APPVER_HEXENREV >= AV_HR_HEX10A)

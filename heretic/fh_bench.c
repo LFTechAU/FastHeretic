@@ -276,7 +276,7 @@ static void Finish(void)
 	FILE *f;
 	int i;
 
-	t += sprintf(t, "FastHeretic benchmark: %s, %s, %s, CPU found: %s\n\n",
+	t += sprintf(t, FH_NAME " benchmark: %s, %s, %s, CPU found: %s\n\n",
 		ExeName(), benchfile, benchdemo, fh_cpunames[fh_cpudetected]);
 	t += sprintf(t, "     fps%s  settings\n", advanced ? "   1% low  0.1% low" : "");
 	for (i = 0; i < numruns; i++)

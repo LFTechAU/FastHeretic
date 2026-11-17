@@ -169,6 +169,17 @@ void V_DrawAltFuzzPatch (int x, int y, patch_t *patch)
 	byte		*desttop, *dest, *source;
 	int			w;
 	
+#ifdef FH_PATCHDIRECT
+	if (fh_planar)
+	{
+		FHY_DrawPatch(x, y, patch, 3);
+		return;
+	}
+#endif
+#if defined(FH_VBD) && !defined(FH_PATCHDIRECT)
+	if (fh_planar)
+		FHY_NoteBox(x, y, patch, 3);
+#endif
 	y -= SHORT(patch->topoffset);
 	x -= SHORT(patch->leftoffset);
 

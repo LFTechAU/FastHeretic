@@ -1733,7 +1733,7 @@ void SB_Drawer(void)
 		DrawSoundInfo();
 	}
 	CPlayer = &players[consoleplayer];
-	if(viewheight == SCREENHEIGHT && !automapactive)
+	if(viewheight == RENDERHEIGHT && !automapactive)
 	{
 		DrawFullScreenStuff();
 		SB_state = -1;
@@ -1966,6 +1966,15 @@ void DrawCommonBar(void)
 	int healthPos;
 
 	V_DrawPatch(0, 134, PatchH2TOP);
+#ifdef FH_DIRECT
+	if (fh_directframe && !fh_planar)
+	{ // FastHexen: the top of the bar overlaps the view, which is already
+	  // in video memory, so draw it there as well
+		FHY_OverlayOn();
+		V_DrawPatch(0, 134, PatchH2TOP);
+		FHY_OverlayOff();
+	}
+#endif
 
 	if(oldhealth != HealthMarker)
 	{

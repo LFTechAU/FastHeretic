@@ -97,14 +97,8 @@ MAKE_TRANSCOLUMN(R_DrawTranslatedColumnPotato, 2, PUT4)
 // Translucent (tinttable) columns
 //--------------------------------------------------------------------------
 
-// Heretic (and Hexen's "alt" ghosts) index the tint table by
-// screen colour * 256 + sprite colour, Hexen's normal ghosts the other way
-#ifdef FH_HEXEN
-#define FUZZIDX(d,c) ((d) + ((c) << 8))
-#else
-#define FUZZIDX(d,c) (((d) << 8) + (c))
-#endif
-#define ALTFUZZIDX(d,c) (((d) << 8) + (c))
+#define FUZZIDX FH_TINT
+#define ALTFUZZIDX FH_TINTALT
 
 #define MAKE_FUZZCOLUMN(NAME, SHIFT, PUT) MAKE_FUZZCOLUMNX(NAME, SHIFT, PUT, FUZZIDX)
 #define MAKE_FUZZCOLUMNX(NAME, SHIFT, PUT, IDX) \

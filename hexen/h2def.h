@@ -18,6 +18,7 @@
 #include "gamever.h"
 
 #define FH_HEXEN
+#define FH_NAME "FastHexen"
 #define FH_VERSION "0.1"
 #define FH_BANNER "FastHexen v" FH_VERSION " by LFTech - based on Hexen v1.0\n"
 

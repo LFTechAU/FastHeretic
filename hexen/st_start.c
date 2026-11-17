@@ -142,6 +142,14 @@ char netnotchTable[]=
 //
 //==========================================================================
 
+// FastHexen: text startup (no 640x480 VGA picture) for the non-VGA video
+// modes, or with -textstartup
+#ifdef FH_BACKBUF
+int fh_textstartup = 1;
+#else
+int fh_textstartup;
+#endif
+
 void ST_Init(void)
 {
 #ifdef __WATCOMC__
@@ -151,7 +159,7 @@ void ST_Init(void)
 #if (APPVER_HEXENREV < AV_HR_HEX10A)
 	I_StartupReadKeys();
 #endif
-	if (!debugmode)
+	if (!debugmode && !fh_textstartup)
 	{
 		// Set 640x480x16 mode
 		SetVideoModeHR();
@@ -175,6 +183,8 @@ void ST_Init(void)
 void ST_Done(void)
 {
 #ifdef __WATCOMC__
+	if (fh_textstartup)
+		return;
 	ClearScreenHR();
 #endif
 }
@@ -228,7 +238,7 @@ void ST_Progress(void)
 	// Check for ESC press -- during startup all events eaten here
 	I_StartupReadKeys();
 
-	if (debugmode)
+	if (debugmode || fh_textstartup)
 	{
 		printf(".");
 	}
@@ -258,7 +268,7 @@ void ST_NetProgress(void)
 {
 #ifdef __WATCOMC__
 	static int netnotchPosition=0;
-	if (debugmode)
+	if (debugmode || fh_textstartup)
 	{
 		printf("*");
 	}
@@ -284,7 +294,7 @@ void ST_NetProgress(void)
 void ST_NetDone(void)
 {
 #if (APPVER_HEXENREV < AV_HR_HEX10A)
-	if (debugmode)
+	if (debugmode || fh_textstartup)
 	{
 		printf(".");
 	}
@@ -323,7 +333,7 @@ void ST_Message(char *message, ...)
 #endif
 
 #ifdef __WATCOMC__
-	if (debugmode)
+	if (debugmode || fh_textstartup)
 	{
 		printf(buffer);
 	}

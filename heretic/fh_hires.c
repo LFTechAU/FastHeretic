@@ -80,7 +80,9 @@ void FHH_PatchToBuf(byte *buf, int bw, int bh, int ox, int oy,
 							if (sh)
 								*dest = tinttable[(*dest) << 8];
 							else if (mode == 1)
-								*dest = tinttable[((*dest) << 8) + *source];
+								*dest = tinttable[FH_TINT(*dest, *source)];
+							else if (mode == 3)
+								*dest = tinttable[FH_TINTALT(*dest, *source)];
 							else
 								*dest = *source;
 						}
@@ -107,7 +109,11 @@ void R_DrawViewBorder(void)
 
 	if (scaledviewwidth == RW || !fh_bordbuf)
 		return;
+#ifdef FH_HEXEN
+	src = W_CacheLumpName("F_022", PU_CACHE);
+#else
 	src = W_CacheLumpName(shareware ? "FLOOR04" : "FLAT513", PU_CACHE);
+#endif
 	dest = fh_bordbuf;
 	for (y = 0; y < VAH; y++, dest += RW)
 	{

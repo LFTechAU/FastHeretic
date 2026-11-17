@@ -2,6 +2,15 @@
 #ifndef __R_FH_H__
 #define __R_FH_H__
 
+// Tint table index: Heretic (and Hexen's "alt" ghosts) use screen colour
+// * 256 + sprite colour, Hexen's normal ghosts the other way round
+#ifdef FH_HEXEN
+#define FH_TINT(d,c) ((d) + ((c) << 8))
+#else
+#define FH_TINT(d,c) (((d) << 8) + (c))
+#endif
+#define FH_TINTALT(d,c) (((d) << 8) + (c))
+
 extern int fh_detail;        // 0 = high, 1 = low, 2 = potato
 extern int fh_flatsurfaces;  // 0 textured, 1 flat lit by distance, 2 flat
 extern int fh_flatsky;       // single-colour sky

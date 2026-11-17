@@ -221,12 +221,27 @@ void R_DrawFuzzColumnY(void)
 	READPLANE(my_rplane[dc_x]);
 	do
 	{
-		*dest = tinttable[((*dest) << 8)
-			+ dc_colormap[dc_source[(frac >> FRACBITS) & 127]]];
+		*dest = tinttable[FH_TINT(*dest,
+			dc_colormap[dc_source[(frac >> FRACBITS) & 127]])];
 		dest += 80;
 		frac += fracstep;
 	} while (count--);
 }
+
+#ifdef FH_HEXEN
+void R_DrawAltFuzzColumnY(void)
+{
+	YCOL_SETUP
+	READPLANE(my_rplane[dc_x]);
+	do
+	{
+		*dest = tinttable[FH_TINTALT(*dest,
+			dc_colormap[dc_source[(frac >> FRACBITS) & 127]])];
+		dest += 80;
+		frac += fracstep;
+	} while (count--);
+}
+#endif
 
 void R_DrawTranslatedFuzzColumnY(void)
 {
@@ -443,6 +458,9 @@ void R_FHY_SetDrawers(void)
 		transfuzzcolfunc = R_DrawTranslatedFuzzColumnY;
 		break;
 	}
+#ifdef FH_HEXEN
+	altfuzzcolfunc = fh_notrans == 0 ? R_DrawAltFuzzColumnY : fuzzcolfunc;
+#endif
 	spanfunc = fh_flatsurfaces ? R_DrawSpanFlatY : R_DrawSpanY;
 	skycolfunc = fh_flatsky ? R_DrawSkyFlatY : R_DrawSkyColumnY;
 
@@ -454,6 +472,10 @@ void R_FHY_SetDrawers(void)
 	{
 		if (fuzzcolfunc == colfunc)
 			fuzzcolfunc = R_DrawColumnYLEA;
+#ifdef FH_HEXEN
+		if (altfuzzcolfunc == colfunc)
+			altfuzzcolfunc = R_DrawColumnYLEA;
+#endif
 		colfunc = basecolfunc = R_DrawColumnYLEA;
 	}
 #endif
@@ -580,7 +602,8 @@ void FHY_OverlayOff(void)
 	fh_planar = NULL;
 }
 
-// mode 0 = solid, 1 = translucent, 2 = solid with shadow
+// mode 0 = solid, 1 = translucent, 2 = solid with shadow,
+// 3 = translucent the other way round (Hexen's alt fuzz)
 void FHY_DrawPatch(int x, int y, patch_t *patch, int mode)
 {
 	int col, w, count, px, r;
@@ -635,7 +658,7 @@ void FHY_DrawPatch(int x, int y, patch_t *patch, int mode)
 			}
 		}
 		SETMASK(1 << (px & 3));
-		if (mode == 1)
+		if (mode & 1)
 			READPLANE(px & 3);
 		top = fh_planar + (px >> 2);
 		while (column->topdelta != 0xff)
@@ -650,11 +673,12 @@ void FHY_DrawPatch(int x, int y, patch_t *patch, int mode)
 				count--;
 			}
 			dest = top + (r >> YH) * 80;
-			if (mode == 1)
+			if (mode & 1)
 			{
 				for (; count > 0; count -= 1 << YH)
 				{
-					*dest = tinttable[((*dest) << 8) + *source];
+					*dest = tinttable[mode == 3 ? FH_TINTALT(*dest, *source)
+						: FH_TINT(*dest, *source)];
 					source += 1 << YH;
 					dest += 80;
 				}
