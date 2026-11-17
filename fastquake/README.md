@@ -66,15 +66,17 @@ CONFIG.CFG is left alone. Any run of FastQuake with -fqbench quits after
 the timedemo and appends its result to FQBENCH.TXT; -fqprof adds a
 breakdown of where the frame time went.
 
-Speed (86Box, 486DX2-66, 16MB, PCI ET4000/W32p, timedemo demo1, viewsize
-100, -nosound, shareware PAK0):
+Speed in 86Box (ASUS PCI/I-486SP3G, 16MB, PCI ET4000/W32p, FQUAKE.EXE,
+timedemo demo1, viewsize 100, -nosound, shareware PAK0), frames per second:
 
-  Original settings              9.1 fps
-  486 spans (fq_spans 1)         9.3 fps
-  Low detail                    12.5 fps
-  Low + fullbright, flat sky
-  and water, pixel particles,
-  no weapon                     14.6 fps
+                                  DX-33   DX2-66   5x86-133
+  FQB1 original settings           4.7     9.3      18.2
+  FQB2 486 spans                    -      9.5        -
+  FQB3 Low detail (320x100)        6.5    12.8      25.0
+  FQB4 Low + fullbright, flat
+       sky/water, pixel particles,
+       no weapon                   7.5    14.9      28.9
+  FQB5 Potato + the same           8.3    16.3      31.6
 
 86Box does not emulate the 486's cache misses, so a real machine may
 differ; please send numbers from real hardware.
