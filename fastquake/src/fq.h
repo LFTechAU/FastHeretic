@@ -1,6 +1,10 @@
 // fq.h: FastQuake options (LFTech)
 #ifndef FQ_H
 #define FQ_H
+#define FQ_VERSION "0.1"
+#ifndef FQ_CPUNAME
+#define FQ_CPUNAME "486"
+#endif
 extern cvar_t fq_detail;	// 0 high, 1 low (half height), 2 potato (half both), 3 half width
 extern cvar_t fq_spans;		// 0 stock (16px), 1 486 32px, 2 486 64px
 extern cvar_t fq_sky;		// 0 normal, 1 flat colour
@@ -23,6 +27,8 @@ void FQ_BenchDone (int frames, float time);
 enum {FQP_RENDER, FQP_SURFS, FQP_CACHE, FQP_SPANS, FQP_ZSPANS, FQP_SKYTURB,
 	FQP_ENTS, FQP_VIEWMODEL, FQP_PARTICLES, FQP_SCREEN, FQP_VIDUPDATE, FQP_NUM};
 extern int fq_prof;
+extern int fq_benchquit;
+extern unsigned fq_nspans, fq_npix;
 extern unsigned fq_proft[FQP_NUM];
 unsigned FQ_Ticks (void);
 #define FQP_BEGIN(n) unsigned _fqp##n = fq_prof ? FQ_Ticks () : 0

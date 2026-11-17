@@ -9,6 +9,8 @@ GPL v2, based on id Software's Quake source.
 #include "dosisms.h"
 
 int fq_prof;
+int fq_benchquit;
+unsigned fq_nspans, fq_npix;
 unsigned fq_proft[FQP_NUM];
 static char *fq_profnames[FQP_NUM] = {"render", "surfs", "cache", "spans",
 	"zspans", "skyturb", "ents", "viewmodel", "particles", "screen", "vidupdate"};
@@ -28,7 +30,10 @@ unsigned FQ_Ticks (void)
 }
 
 cvar_t fq_detail = {"fq_detail", "0", true};
-cvar_t fq_spans = {"fq_spans", "1", true};
+#ifndef FQ_DEFSPANS
+#define FQ_DEFSPANS "1"		// 486 build: 32 pixel segments
+#endif
+cvar_t fq_spans = {"fq_spans", FQ_DEFSPANS, true};
 cvar_t fq_sky = {"fq_sky", "0", true};
 cvar_t fq_water = {"fq_water", "0", true};
 cvar_t fq_particles = {"fq_particles", "0", true};
@@ -42,6 +47,7 @@ vrect_t fq_fullvrect;
 void FQ_Init (void)
 {
 	fq_prof = COM_CheckParm ("-fqprof") ? 1 : 0;
+	Con_Printf ("FastQuake v" FQ_VERSION " (" FQ_CPUNAME " build) by LFTech\n");
 	Cvar_RegisterVariable (&fq_detail);
 	Cvar_RegisterVariable (&fq_spans);
 	Cvar_RegisterVariable (&fq_sky);
@@ -225,10 +231,13 @@ void FQ_BenchDone (int frames, float time)
 		{
 			for (i = 0 ; i < FQP_NUM ; i++)
 				fprintf (f, "  %s %.1f%%", fq_profnames[i], fq_proft[i] / 11931.82 / time);
+			if (fq_nspans)
+				fprintf (f, "  spans/frame %d px/span %.1f", fq_nspans / frames, (float)fq_npix / fq_nspans);
 			fprintf (f, "\n");
 		}
 		fclose (f);
 	}
+	fq_benchquit = 1;
 	CL_Disconnect ();
 	Host_ShutdownServer (false);
 	Sys_Quit ();

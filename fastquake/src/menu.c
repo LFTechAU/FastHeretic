@@ -1363,7 +1363,7 @@ void M_FastQuake_Draw (void)
 	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
 	p = Draw_CachePic ("gfx/p_option.lmp");
 	M_DrawPic ( (320-p->width)/2, 4, p);
-	M_PrintWhite (88, 32, "FastQuake by LFTech");
+	M_PrintWhite (64, 32, "FastQuake v" FQ_VERSION " by LFTech");
 	for (i = 0 ; i < FQ_ITEMS ; i++)
 	{
 		v = (int)fqitems[i].var->value;
@@ -1372,7 +1372,7 @@ void M_FastQuake_Draw (void)
 		M_Print (16 + 8*(17 - strlen(fqitems[i].label)), 48 + i*8, fqitems[i].label);
 		M_Print (176, 48 + i*8, fqitems[i].names[v]);
 	}
-	M_Print (16, 48 + FQ_ITEMS*8 + 16, "  Benchmark: timedemo demo1");
+	M_Print (16, 48 + FQ_ITEMS*8 + 16, " Left/Right or Enter to change");
 	M_DrawCharacter (160, 48 + fq_cursor*8, 12+((int)(realtime*4)&1));
 }
 
