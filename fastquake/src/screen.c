@@ -806,7 +806,7 @@ WARNING: be very careful calling this from elsewhere, because the refresh
 needs almost the entire 256k of stack space!
 ==================
 */
-void SCR_UpdateScreen (void)
+static void SCR_UpdateScreen_ (void)
 {
 	static float	oldscr_viewsize;
 	static float	oldlcd_x;
@@ -864,6 +864,14 @@ void SCR_UpdateScreen (void)
 	
 	if ((int)fq_detail.value != fq_curdetail)
 		vid.recalc_refdef = true;
+	{
+		static int lastlight;
+		if ((int)fq_light.value != lastlight)
+		{
+			lastlight = (int)fq_light.value;
+			D_FlushCaches ();
+		}
+	}
 
 	if (vid.recalc_refdef)
 	{
@@ -971,7 +979,7 @@ void SCR_UpdateScreen (void)
 		vrect.height = vid.height;
 		vrect.pnext = 0;
 	
-		VID_Update (&vrect);
+		{ FQP_BEGIN(10); VID_Update (&vrect); FQP_END(10); }
 	}
 	else if (scr_copytop)
 	{
@@ -981,7 +989,7 @@ void SCR_UpdateScreen (void)
 		vrect.height = vid.height - sb_lines;
 		vrect.pnext = 0;
 	
-		VID_Update (&vrect);
+		{ FQP_BEGIN(10); VID_Update (&vrect); FQP_END(10); }
 	}	
 	else
 	{
@@ -991,7 +999,7 @@ void SCR_UpdateScreen (void)
 		vrect.height = scr_vrect.height;
 		vrect.pnext = 0;
 	
-		VID_Update (&vrect);
+		{ FQP_BEGIN(10); VID_Update (&vrect); FQP_END(10); }
 	}
 }
 
@@ -1005,4 +1013,11 @@ void SCR_UpdateWholeScreen (void)
 {
 	scr_fullupdate = 0;
 	SCR_UpdateScreen ();
+}
+
+void SCR_UpdateScreen (void)
+{
+	FQP_BEGIN(9);
+	SCR_UpdateScreen_ ();
+	FQP_END(9);
 }

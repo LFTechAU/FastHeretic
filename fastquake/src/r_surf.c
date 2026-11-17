@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include "r_local.h"
+#include "fq.h"
 
 drawsurf_t	r_drawsurf;
 
@@ -241,6 +242,83 @@ texture_t *R_TextureAnimation (texture_t *base)
 
 
 /*
+FastQuake surface block drawers (LFTech).
+FQ_DrawSurfaceBlockFlat: one light level per lightmap block (average of
+the four corners) instead of interpolating it across every texel.
+FQ_DrawSurfaceBlockCopy: no lighting at all, texels copied straight.
+*/
+static void FQ_DrawSurfaceBlockFlat (void)
+{
+	int				v, i, b, light, bs = blocksize;
+	unsigned char	*psource, *prowdest, *cmap;
+
+	psource = pbasesource;
+	prowdest = prowdestbase;
+
+	for (v=0 ; v<r_numvblocks ; v++)
+	{
+		light = (r_lightptr[0] + r_lightptr[1] +
+			r_lightptr[r_lightwidth] + r_lightptr[r_lightwidth+1]) >> 2;
+		r_lightptr += r_lightwidth;
+		cmap = (unsigned char *)vid.colormap + (light & 0xFF00);
+
+		for (i=0 ; i<bs ; i++)
+		{
+			if (bs >= 4)
+			{
+				for (b=0 ; b<bs ; b+=4)
+				{
+					prowdest[b] = cmap[psource[b]];
+					prowdest[b+1] = cmap[psource[b+1]];
+					prowdest[b+2] = cmap[psource[b+2]];
+					prowdest[b+3] = cmap[psource[b+3]];
+				}
+			}
+			else
+			{
+				prowdest[0] = cmap[psource[0]];
+				prowdest[1] = cmap[psource[1]];
+			}
+			psource += sourcetstep;
+			prowdest += surfrowbytes;
+		}
+		if (psource >= r_sourcemax)
+			psource -= r_stepback;
+	}
+}
+
+static void FQ_DrawSurfaceBlockCopy (void)
+{
+	int				v, i, bs = blocksize;
+	unsigned char	*psource, *prowdest;
+
+	psource = pbasesource;
+	prowdest = prowdestbase;
+
+	for (v=0 ; v<r_numvblocks ; v++)
+	{
+		for (i=0 ; i<bs ; i++)
+		{
+			if (bs >= 4)
+			{
+				int *d = (int *)prowdest, *s = (int *)psource, n = bs >> 2;
+				while (n--)
+					*d++ = *s++;
+			}
+			else
+			{
+				prowdest[0] = psource[0];
+				prowdest[1] = psource[1];
+			}
+			psource += sourcetstep;
+			prowdest += surfrowbytes;
+		}
+		if (psource >= r_sourcemax)
+			psource -= r_stepback;
+	}
+}
+
+/*
 ===============
 R_DrawSurface
 ===============
@@ -257,7 +335,8 @@ void R_DrawSurface (void)
 	texture_t		*mt;
 
 // calculate the lightings
-	R_BuildLightMap ();
+	if (fq_light.value != 2)
+		R_BuildLightMap ();
 	
 	surfrowbytes = r_drawsurf.rowbytes;
 
@@ -284,6 +363,10 @@ void R_DrawSurface (void)
 	if (r_pixbytes == 1)
 	{
 		pblockdrawer = surfmiptable[r_drawsurf.surfmip];
+		if (fq_light.value == 1)
+			pblockdrawer = FQ_DrawSurfaceBlockFlat;
+		else if (fq_light.value == 2)
+			pblockdrawer = FQ_DrawSurfaceBlockCopy;
 	// TODO: only needs to be set when there is a display settings change
 		horzblockstep = blocksize;
 	}

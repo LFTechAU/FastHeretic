@@ -6,7 +6,7 @@ B ?= build/stock
 EXE ?= QUAKE.EXE
 CPU ?= -march=i486 -mtune=i486
 DEFS ?=
-CFLAGS = $(CPU) -O2 -fno-strict-aliasing -ffast-math -fcommon -fno-pie -w $(DEFS) -Isrc
+CFLAGS = $(CPU) -O2 -MMD -fno-strict-aliasing -ffast-math -fcommon -fno-pie -w $(DEFS) -Isrc
 ASFLAGS = $(DEFS) -Isrc -x assembler-with-cpp
 
 COBJS = chase cl_demo cl_input cl_main cl_parse cl_tent cmd common console crc cvar \
@@ -19,7 +19,7 @@ COBJS = chase cl_demo cl_input cl_main cl_parse cl_tent cmd common console crc c
  snd_mem snd_mix in_dos sys_dos fq fq_span $(EXTRA_C)
 SOBJS = d_copy d_draw d_draw16 d_parta d_polysa d_scana d_spr8 d_varsa math \
  r_aliasa r_drawa r_edgea r_varsa surf16 surf8 worlda r_aclipa snd_mixa sys_dosa \
- dosasm fq_spana $(EXTRA_S)
+ dosasm fq_draw $(EXTRA_S)
 
 OBJS = $(addprefix $(B)/,$(addsuffix .o,$(COBJS) $(SOBJS)))
 
@@ -35,3 +35,4 @@ $(B):
 	mkdir -p $@
 clean:
 	rm -rf build
+-include $(wildcard $(B)/*.d)

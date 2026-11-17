@@ -369,14 +369,14 @@ void R_ViewChanged (vrect_t *pvrect, int lineadj, float aspect)
 // FastQuake: low / potato detail renders a half size view and stretches it
 	fq_fullvrect = r_refdef.vrect;
 	fq_curdetail = (int)fq_detail.value;
-	if (fq_curdetail < 0 || fq_curdetail > 2)
+	if (fq_curdetail < 0 || fq_curdetail > 3)
 		fq_curdetail = 0;
-	if (fq_curdetail >= 1)
+	if (fq_curdetail >= 2)	// potato, half width
 	{
 		r_refdef.vrect.width >>= 1;
 		aspect *= 2;
 	}
-	if (fq_curdetail == 2)
+	if (fq_curdetail == 1 || fq_curdetail == 2)	// low, potato: half height
 	{
 		r_refdef.vrect.height >>= 1;
 		aspect *= 0.5;
@@ -971,6 +971,7 @@ r_refdef must be set before the first call
 void R_RenderView_ (void)
 {
 	byte	warpbuffer[WARP_WIDTH * WARP_HEIGHT];
+	FQP_BEGIN(0);
 
 	r_warpbuffer = warpbuffer;
 
@@ -1016,7 +1017,7 @@ SetVisibilityByPassages ();
 		de_time1 = se_time2;
 	}
 
-	R_DrawEntitiesOnList ();
+	{ FQP_BEGIN(6); R_DrawEntitiesOnList (); FQP_END(6); }
 
 	if (r_dspeeds.value)
 	{
@@ -1024,7 +1025,7 @@ SetVisibilityByPassages ();
 		dv_time1 = de_time2;
 	}
 
-	R_DrawViewModel ();
+	{ FQP_BEGIN(7); R_DrawViewModel (); FQP_END(7); }
 
 	if (r_dspeeds.value)
 	{
@@ -1032,7 +1033,7 @@ SetVisibilityByPassages ();
 		dp_time1 = Sys_FloatTime ();
 	}
 
-	R_DrawParticles ();
+	{ FQP_BEGIN(8); R_DrawParticles (); FQP_END(8); }
 
 	if (r_dspeeds.value)
 		dp_time2 = Sys_FloatTime ();
@@ -1064,6 +1065,7 @@ SetVisibilityByPassages ();
 
 // back to high floating-point precision
 	Sys_HighFPPrecision ();
+	FQP_END(0);
 }
 
 void R_RenderView (void)

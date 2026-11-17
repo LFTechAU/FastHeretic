@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 #include "quakedef.h"
+#include "fq.h"
 
 #ifdef _WIN32
 #include "winquake.h"
@@ -26,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 void (*vid_menudrawfn)(void);
 void (*vid_menukeyfn)(int key);
 
-enum {m_none, m_main, m_singleplayer, m_load, m_save, m_multiplayer, m_setup, m_net, m_options, m_video, m_keys, m_help, m_quit, m_serialconfig, m_modemconfig, m_lanconfig, m_gameoptions, m_search, m_slist} m_state;
+enum {m_none, m_main, m_singleplayer, m_load, m_save, m_multiplayer, m_setup, m_net, m_options, m_video, m_keys, m_help, m_quit, m_serialconfig, m_modemconfig, m_lanconfig, m_gameoptions, m_search, m_slist, m_fastquake} m_state;
 
 void M_Menu_Main_f (void);
 	void M_Menu_SinglePlayer_f (void);
@@ -36,6 +37,7 @@ void M_Menu_Main_f (void);
 		void M_Menu_Setup_f (void);
 		void M_Menu_Net_f (void);
 	void M_Menu_Options_f (void);
+	void M_Menu_FastQuake_f (void);
 		void M_Menu_Keys_f (void);
 		void M_Menu_Video_f (void);
 	void M_Menu_Help_f (void);
@@ -1039,7 +1041,7 @@ again:
 #ifdef _WIN32
 #define	OPTIONS_ITEMS	14
 #else
-#define	OPTIONS_ITEMS	13
+#define	OPTIONS_ITEMS	14	// FastQuake options is item 13
 #endif
 
 #define	SLIDER_RANGE	10
@@ -1222,6 +1224,9 @@ void M_Options_Draw (void)
 
 	if (vid_menudrawfn)
 		M_Print (16, 128, "         Video Options");
+#ifndef _WIN32
+	M_Print (16, 136, "     FastQuake Options");
+#endif
 
 #ifdef _WIN32
 	if (modestate == MS_WINDOWED)
@@ -1261,6 +1266,11 @@ void M_Options_Key (int k)
 		case 12:
 			M_Menu_Video_f ();
 			break;
+#ifndef _WIN32
+		case 13:
+			M_Menu_FastQuake_f ();
+			break;
+#endif
 		default:
 			M_AdjustSliders (1);
 			break;
@@ -1295,7 +1305,7 @@ void M_Options_Key (int k)
 		if (k == K_UPARROW)
 			options_cursor = 11;
 		else
-			options_cursor = 0;
+			options_cursor = 13;
 	}
 
 #ifdef _WIN32
@@ -1307,6 +1317,101 @@ void M_Options_Key (int k)
 			options_cursor = 0;
 	}
 #endif
+}
+
+//=============================================================================
+/* FASTQUAKE MENU (LFTech) */
+
+extern cvar_t d_mipcap;
+extern cvar_t r_drawviewmodel;
+
+typedef struct
+{
+	char	*label;
+	cvar_t	*var;
+	int		count;
+	char	*names[5];
+} fqitem_t;
+
+static fqitem_t fqitems[] =
+{
+	{"Detail", &fq_detail, 4, {"High", "Low 320x100", "Potato 160x100", "Low 160x200"}},
+	{"Texture spans", &fq_spans, 3, {"Stock 16px", "486 32px", "486 64px"}},
+	{"Texture detail", &d_mipcap, 4, {"Full", "Half", "Quarter", "Eighth"}},
+	{"Lighting", &fq_light, 3, {"Normal", "Flat blocks", "Fullbright"}},
+	{"Show weapon", &r_drawviewmodel, 2, {"Off", "On"}},
+	{"Sky", &fq_sky, 2, {"Normal", "Flat"}},
+	{"Water", &fq_water, 2, {"Warped", "Flat"}},
+	{"Particles", &fq_particles, 3, {"Normal", "Pixel", "None"}},
+	{"Show FPS", &fq_fps, 2, {"Off", "On"}},
+};
+#define FQ_ITEMS (sizeof(fqitems)/sizeof(fqitems[0]))
+int fq_cursor;
+
+void M_Menu_FastQuake_f (void)
+{
+	key_dest = key_menu;
+	m_state = m_fastquake;
+	m_entersound = true;
+}
+
+void M_FastQuake_Draw (void)
+{
+	int i, v;
+	qpic_t *p;
+
+	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
+	p = Draw_CachePic ("gfx/p_option.lmp");
+	M_DrawPic ( (320-p->width)/2, 4, p);
+	M_PrintWhite (88, 32, "FastQuake by LFTech");
+	for (i = 0 ; i < FQ_ITEMS ; i++)
+	{
+		v = (int)fqitems[i].var->value;
+		if (v < 0 || v >= fqitems[i].count)
+			v = 0;
+		M_Print (16 + 8*(17 - strlen(fqitems[i].label)), 48 + i*8, fqitems[i].label);
+		M_Print (176, 48 + i*8, fqitems[i].names[v]);
+	}
+	M_Print (16, 48 + FQ_ITEMS*8 + 16, "  Benchmark: timedemo demo1");
+	M_DrawCharacter (160, 48 + fq_cursor*8, 12+((int)(realtime*4)&1));
+}
+
+void M_FastQuake_Key (int k)
+{
+	int v, dir = 0;
+
+	switch (k)
+	{
+	case K_ESCAPE:
+		M_Menu_Options_f ();
+		return;
+	case K_UPARROW:
+		S_LocalSound ("misc/menu1.wav");
+		if (--fq_cursor < 0)
+			fq_cursor = FQ_ITEMS-1;
+		return;
+	case K_DOWNARROW:
+		S_LocalSound ("misc/menu1.wav");
+		if (++fq_cursor >= FQ_ITEMS)
+			fq_cursor = 0;
+		return;
+	case K_LEFTARROW:
+		dir = -1;
+		break;
+	case K_RIGHTARROW:
+	case K_ENTER:
+		dir = 1;
+		break;
+	default:
+		return;
+	}
+	S_LocalSound ("misc/menu3.wav");
+	v = (int)fqitems[fq_cursor].var->value + dir;
+	if (v < 0)
+		v = fqitems[fq_cursor].count - 1;
+	if (v >= fqitems[fq_cursor].count)
+		v = 0;
+	Cvar_SetValue (fqitems[fq_cursor].var->name, v);
 }
 
 //=============================================================================
@@ -3089,6 +3194,10 @@ void M_Draw (void)
 		M_Video_Draw ();
 		break;
 
+	case m_fastquake:
+		M_FastQuake_Draw ();
+		break;
+
 	case m_help:
 		M_Help_Draw ();
 		break;
@@ -3179,6 +3288,10 @@ void M_Keydown (int key)
 
 	case m_video:
 		M_Video_Key (key);
+		return;
+
+	case m_fastquake:
+		M_FastQuake_Key (key);
 		return;
 
 	case m_help:

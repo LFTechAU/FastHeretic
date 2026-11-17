@@ -172,7 +172,7 @@ void D_CalcGradients (msurface_t *pface)
 D_DrawSurfaces
 ==============
 */
-void D_DrawSurfaces (void)
+static void D_DrawSurfaces_ (void)
 {
 	surf_t			*s;
 	msurface_t		*pface;
@@ -220,10 +220,12 @@ void D_DrawSurfaces (void)
 					R_MakeSky ();
 				}
 
+				{ FQP_BEGIN(5);
 				if (fq_sky.value)
 					D_DrawSolidSurface (s, fq_skycolor);
 				else
 					D_DrawSkyScans8 (s->spans);
+				FQP_END(5); }
 				D_DrawZSpans (s->spans);
 			}
 			else if (s->flags & SURF_DRAWBACKGROUND)
@@ -260,6 +262,7 @@ void D_DrawSurfaces (void)
 										// make entity passed in
 				}
 
+				{ FQP_BEGIN(5);
 				if (fq_water.value)
 					D_DrawSolidSurface (s, FQ_TextureColor (pface->texinfo->texture));
 				else
@@ -267,6 +270,7 @@ void D_DrawSurfaces (void)
 				D_CalcGradients (pface);
 				Turbulent8 (s->spans);
 				}
+				FQP_END(5); }
 				D_DrawZSpans (s->spans);
 
 				if (s->insubmodel)
@@ -306,19 +310,21 @@ void D_DrawSurfaces (void)
 				* pface->texinfo->mipadjust);
 
 			// FIXME: make this passed in to D_CacheSurface
-				pcurrentcache = D_CacheSurface (pface, miplevel);
+				{ FQP_BEGIN(2); pcurrentcache = D_CacheSurface (pface, miplevel); FQP_END(2); }
 
 				cacheblock = (pixel_t *)pcurrentcache->data;
 				cachewidth = pcurrentcache->width;
 
 				D_CalcGradients (pface);
 
+				{ FQP_BEGIN(3);
 				if (fq_spans.value >= 1)
 					D_DrawSpansFQ (s->spans);
 				else
 					(*d_drawspans) (s->spans);
+				FQP_END(3); }
 
-				D_DrawZSpans (s->spans);
+				{ FQP_BEGIN(4); D_DrawZSpans (s->spans); FQP_END(4); }
 
 				if (s->insubmodel)
 				{
@@ -341,3 +347,10 @@ void D_DrawSurfaces (void)
 	}
 }
 
+
+void D_DrawSurfaces (void)
+{
+	FQP_BEGIN(1);
+	D_DrawSurfaces_ ();
+	FQP_END(1);
+}

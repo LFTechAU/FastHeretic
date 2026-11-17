@@ -6,13 +6,34 @@ GPL v2, based on id Software's Quake source.
 #include "r_local.h"
 #include "d_local.h"
 #include "fq.h"
+#include "dosisms.h"
+
+int fq_prof;
+unsigned fq_proft[FQP_NUM];
+static char *fq_profnames[FQP_NUM] = {"render", "surfs", "cache", "spans",
+	"zspans", "skyturb", "ents", "viewmodel", "particles", "screen", "vidupdate"};
+
+unsigned FQ_Ticks (void)
+{
+	unsigned t, t2;
+	int r;
+	t = *(unsigned short *)real2ptr(0x46c);
+	dos_outportb (0x43, 0);
+	r = dos_inportb (0x40);
+	r |= dos_inportb (0x40) << 8;
+	t2 = *(unsigned short *)real2ptr(0x46c);
+	if (t2 != t && (r & 0x8000))
+		t = t2;
+	return t * 65536 + (65536 - ((r - 1) & 0xffff));
+}
 
 cvar_t fq_detail = {"fq_detail", "0", true};
-cvar_t fq_spans = {"fq_spans", "2", true};
+cvar_t fq_spans = {"fq_spans", "1", true};
 cvar_t fq_sky = {"fq_sky", "0", true};
 cvar_t fq_water = {"fq_water", "0", true};
 cvar_t fq_particles = {"fq_particles", "0", true};
 cvar_t fq_fps = {"fq_fps", "0", true};
+cvar_t fq_light = {"fq_light", "0", true};
 
 int fq_curdetail;
 int fq_skycolor;
@@ -20,12 +41,15 @@ vrect_t fq_fullvrect;
 
 void FQ_Init (void)
 {
+	fq_prof = COM_CheckParm ("-fqprof") ? 1 : 0;
 	Cvar_RegisterVariable (&fq_detail);
 	Cvar_RegisterVariable (&fq_spans);
 	Cvar_RegisterVariable (&fq_sky);
 	Cvar_RegisterVariable (&fq_water);
 	Cvar_RegisterVariable (&fq_particles);
 	Cvar_RegisterVariable (&fq_fps);
+	Cvar_RegisterVariable (&fq_light);
+	{ extern cvar_t d_mipcap, r_drawviewmodel; d_mipcap.archive = true; r_drawviewmodel.archive = true; }
 }
 
 /*
@@ -42,6 +66,20 @@ void FQ_ExpandView (void)
 	byte *src, *dst;
 
 	if (fq_curdetail == 1)
+	{
+		for (r = hh - 1 ; r >= 0 ; r--)
+		{
+			src = vid.buffer + (y0 + r) * rb + x0;
+			dst = vid.buffer + (y0 + 2*r) * rb + x0;
+			if (2*r >= h)
+				continue;
+			if (r)
+				memcpy (dst, src, w);
+			if (2*r+1 < h)
+				memcpy (dst + rb, dst, w);
+		}
+	}
+	else if (fq_curdetail == 3)
 	{
 		for (r = 0 ; r < h ; r++)
 		{
@@ -180,10 +218,18 @@ void FQ_BenchDone (int frames, float time)
 		for (i = 1 ; i < com_argc ; i++)
 			if (com_argv[i])
 				fprintf (f, " %s", com_argv[i]);
-		fprintf (f, " | vid %dx%d detail %d spans %d sky %d water %d part %d\n",
-			vid.width, vid.height, (int)fq_detail.value, (int)fq_spans.value,
+		fprintf (f, " | vid %dx%d detail %d spans %d light %d sky %d water %d part %d\n",
+			vid.width, vid.height, (int)fq_detail.value, (int)fq_spans.value, (int)fq_light.value,
 			(int)fq_sky.value, (int)fq_water.value, (int)fq_particles.value);
+		if (fq_prof)
+		{
+			for (i = 0 ; i < FQP_NUM ; i++)
+				fprintf (f, "  %s %.1f%%", fq_profnames[i], fq_proft[i] / 11931.82 / time);
+			fprintf (f, "\n");
+		}
 		fclose (f);
 	}
-	Cbuf_AddText ("quit\n");
+	CL_Disconnect ();
+	Host_ShutdownServer (false);
+	Sys_Quit ();
 }
