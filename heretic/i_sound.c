@@ -3,6 +3,9 @@
 
 #include <stdio.h>
 #include "doomdef.h"
+#include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
 #include "dmx.h"
 #include "sounds.h"
 #include "i_sound.h"
@@ -277,6 +280,61 @@ static const char *cardnames[NUM_SCARDS] = {"none", "PC speaker",
 	"WAV files", "Sound Blaster MIDI", "Serial MIDI", "LPT MIDI",
 	"Windows Sound System", "IBM Music Feature", "ESFM", "Adlib Gold"};
 
+// FastDoom's library reads the Sound Blaster settings only from the
+// BLASTER variable. Put the port, IRQ and DMA from HERETIC.CFG into it
+// (when set there), keeping the rest of BLASTER (H, T, P, E) as it is.
+static void SetBlasterEnv(void)
+{
+	static char env[96];
+	char *old = getenv("BLASTER");
+	char *d;
+	int skip;
+
+	strcpy(env, "BLASTER=");
+	d = env + 8;
+	if (snd_SBport > 0)
+		d += sprintf(d, "A%x ", snd_SBport);
+	if (snd_SBirq > 0)
+		d += sprintf(d, "I%d ", snd_SBirq);
+	if (snd_SBdma >= 0)
+		d += sprintf(d, "D%d ", snd_SBdma);
+	if (old)
+	{
+		while (*old && d < env + sizeof(env) - 16)
+		{
+			while (*old == ' ')
+				old++;
+			if (!*old)
+				break;
+			skip = (toupper(*old) == 'A' && snd_SBport > 0)
+				|| (toupper(*old) == 'I' && snd_SBirq > 0)
+				|| (toupper(*old) == 'D' && snd_SBdma >= 0);
+			while (*old && *old != ' ')
+			{
+				if (!skip)
+					*d++ = *old;
+				old++;
+			}
+			if (!skip)
+				*d++ = ' ';
+		}
+	}
+	else
+	{
+		// no BLASTER at all: assume the plainest card (T1, 8-bit mono),
+		// IRQ 7 and DMA 1 unless HERETIC.CFG says otherwise
+		if (snd_SBport <= 0)
+			d += sprintf(d, "A220 ");
+		if (snd_SBirq <= 0)
+			d += sprintf(d, "I7 ");
+		if (snd_SBdma < 0)
+			d += sprintf(d, "D1 ");
+		d += sprintf(d, "T1 ");
+	}
+	*d = 0;
+	putenv(env);
+}
+
 void I_StartupSound (void)
 {
 	int mdev, sdev, musport, sndport, p;
@@ -329,6 +387,7 @@ void I_StartupSound (void)
 	if (snd_SfxDevice == snd_CMS)
 		sndport = snd_SBport > 0 ? snd_SBport : 0x220;
 
+	SetBlasterEnv();
 	numChannels = snd_Channels > 0 ? snd_Channels : 8;
 	reverseStereo = snd_ReverseStereo;
 	snd_MidiDevice = snd_MidiType;
