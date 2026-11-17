@@ -1491,7 +1491,7 @@ void I_Update (void)
 			for(i = viewwindowy*SCREENWIDTH+viewwindowx; i <
 				(viewwindowy+viewheight)*SCREENWIDTH; i += SCREENWIDTH)
 			{
-				memcpy(pcscreen+i, screen+i, viewwidth);
+				memcpy(pcscreen+i, screen+i, scaledviewwidth);
 			}
 			UpdateState &= ~I_FULLVIEW;
 		}

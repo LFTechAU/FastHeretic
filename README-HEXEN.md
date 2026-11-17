@@ -17,6 +17,7 @@ Executables
   FHEX4.EXE    Mode Y, built for 486 / 5x86
   FHEX5.EXE    Mode Y, built for Pentium
   FHEX13H.EXE  Mode 13h, built for 386 (like the original HEXEN.EXE)
+  FHX13H4.EXE  Mode 13h, built for 486 / 5x86
   FHEXH.EXE    Mode Y at half height (320x100, each line shown twice
                as tall)
   FHEXX.EXE    Mode X 320x240, square pixels, 3 pages
@@ -86,6 +87,10 @@ Settings are saved to HEXEN.CFG (the original HEXEN.EXE ignores them).
 
 Changes
 -------
+
+v0.1.1 Fixed the Mode 13h and VESA (VBR) programs at low and potato
+      detail with a view smaller than full screen: only part of the view
+      reached the screen. Added FHX13H4.EXE (Mode 13h for 486).
 
 v0.1  First FastHexen: everything in FastHeretic v0.7 (detail levels,
       flat floors and sky, ghost options, per-CPU drawers, Mode Y, Mode X,

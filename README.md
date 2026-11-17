@@ -15,6 +15,7 @@ Executables
   FHTIC4.EXE   Mode Y, built for 486 / 5x86
   FHTIC5.EXE   Mode Y, built for Pentium
   FHTIC13H.EXE Mode 13h, built for 386
+  FHT13H4.EXE  Mode 13h, built for 486 / 5x86
   FHTICH.EXE   Mode Y at half height (320x100, each line shown twice
                as tall): about a quarter faster again
   FHTICX.EXE   Mode X 320x240, square pixels, drawn straight into video
@@ -169,6 +170,11 @@ Settings are saved to HERETIC.CFG (the original HERETIC.EXE ignores them).
 
 Changes
 -------
+
+v0.7.1 Fixed the Mode 13h and VESA (VBR) programs at low and potato
+      detail with a view smaller than full screen: only the left half or
+      quarter of the view reached the screen. Added FHT13H4.EXE (Mode
+      13h for 486).
 
 v0.7  FastDoom's sound library with all its cards (above), and the
       FHSETUP.EXE setup program. Drawers tuned per CPU like FastDoom

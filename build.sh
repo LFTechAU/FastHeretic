@@ -39,7 +39,7 @@ FDASM=""    # FastDoom video mode asm file (heretic/fd)
 fdmode() { MODEDEF="-dFH_BACKBUF -d$1"; NASMDEF="-D$1"; FDC=$2; FDASM=$3; EXE=fhtic$4$SUF.exe; }
 case "$MODE" in
   y)   MODEDEF="-dFH_MODEY"; EXE=fhtic$SUF.exe; EXTRAOBJ="fhasmy" ;;
-  13h) MODEDEF=""; EXE=fhtic13h$SUF.exe ;;
+  13h) MODEDEF=""; EXE=fhtic13h.exe; [ -n "$SUF" ] && EXE=fht13h$SUF.exe ;;  # 8.3 names
   yh)  MODEDEF="-dFH_MODEY -dFH_MODEYH"; EXE=fhtich$SUF.exe; EXTRAOBJ="fhasmy" ;;
   vbr) MODEDEF="-dFH_VBR"; EXE=fhticvbr$SUF.exe ;;
   vbd) MODEDEF="-dFH_VBD"; EXE=fhticvbd$SUF.exe ;;
