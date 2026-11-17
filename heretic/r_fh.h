@@ -20,7 +20,14 @@ void FH_TryRunTicsUncapped(void);
 extern int fh_near;          // only draw nearby non-monster sprites
 extern int fh_vsync;         // wait for vertical retrace before blits
 extern int fh_csv;           // append timedemo results to FHBENCH.CSV
-extern int fh_fixdac;        // wait for retrace before palette changes (-fixDAC)
+extern int fh_fixdac;
+// fh_bench.c
+extern int fh_bench, fh_benchnext;
+int FH_BenchInit(void);
+void FH_BenchStart(void);
+void FH_BenchFrame(void);
+void FH_BenchEnd(void);
+void FH_BenchNext(void);        // wait for retrace before palette changes (-fixDAC)
 
 extern void (*skycolfunc)(void);
 extern void (*transcolfunc)(void);

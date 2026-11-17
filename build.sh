@@ -101,7 +101,7 @@ fi
 HERETIC_C="am_map ct_chat d_main d_net f_finale g_game info in_lude i_cyber i_ibm i_sound \
  mn_menu m_misc p_ceilng p_doors p_enemy p_floor p_inter p_lights p_map p_maputl p_mobj \
  p_plats p_pspr p_setup p_sight p_spec p_switch p_telept p_tick p_user r_bsp r_data r_draw \
- r_main r_plane r_segs r_things sb_bar sounds tables v_video w_wad z_zone i_text r_fhdraw fh_modey fhvideo fh_vesa fh_uncap fh_hires fh_cpu"
+ r_main r_plane r_segs r_things sb_bar sounds tables v_video w_wad z_zone i_text r_fhdraw fh_modey fhvideo fh_vesa fh_uncap fh_hires fh_cpu fh_bench"
 APODMX_C="dmx dpmiapi mus2mid tsmapi usrhooks"
 FDSND_C="ns_adbfx ns_awe32 ns_cd ns_cms ns_dma ns_dpmi ns_dsney ns_esfm ns_fxm ns_gold ns_gus ns_gusau \
  ns_gusmi ns_imfc ns_irq ns_llm ns_lpt ns_lptmusic ns_midi ns_mpu401 ns_multi ns_music ns_pas16 ns_pcfx \

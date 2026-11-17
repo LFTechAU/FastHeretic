@@ -18,7 +18,7 @@
 #if (APPVER_HERETICREV >= AV_HR_TIC13)
 #define VERSION 130
 #define VERSION_TEXT "v1.3"
-#define FH_VERSION "0.6"
+#define FH_VERSION "0.7"
 #define FH_BANNER "FastHeretic v" FH_VERSION " by LFTech - based on Heretic v1.3\n"
 #elif (APPVER_HERETICREV >= AV_HR_TIC12)
 #define VERSION 120

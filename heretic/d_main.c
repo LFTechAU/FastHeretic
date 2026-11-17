@@ -363,6 +363,8 @@ void D_DoomLoop(void)
 	I_InitGraphics();
 	while(1)
 	{
+		if (fh_benchnext)
+			FH_BenchNext();     // FastHeretic -bench: next run
 		// Frame syncronous IO operations
 		I_StartFrame();
 
@@ -393,6 +395,7 @@ void D_DoomLoop(void)
 		// Move positional sounds
 		S_UpdateSounds(players[consoleplayer].mo);
 		D_Display();
+		FH_BenchFrame();
 	}
 }
 
@@ -1318,6 +1321,12 @@ void D_DoomMain(void)
 	if(p && p < myargc-1)
 	{
 		G_TimeDemo(myargv[p+1]);
+		D_DoomLoop(); // Never returns
+	}
+
+	if (FH_BenchInit())
+	{ // FastHeretic -bench FILE.BNC [demo]
+		FH_BenchStart();
 		D_DoomLoop(); // Never returns
 	}
 

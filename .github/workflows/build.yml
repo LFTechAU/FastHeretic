@@ -37,6 +37,7 @@ jobs:
           cp build/*/FHTIC*.EXE build/*/FHM*.EXE build/setup/FHSETUP.EXE dist/
           cp build/stock-13h/htic13f.exe dist/HTIC13F.EXE
           cp README.md dist/README.TXT
+          cp bench/*.BNC bench/BENCH.BAT dist/
           cp heretic/license.txt dist/LICENSE.TXT
 
       - uses: actions/upload-artifact@v4

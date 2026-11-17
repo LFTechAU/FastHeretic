@@ -81,6 +81,21 @@ other's settings in HERETIC.CFG.
 
 Benchmark:  FHTIC -timedemo demo1
 
+Benchmark mode runs a demo once for each line of a .BNC file (the same
+files FastDoom uses) and shows all the results together:
+
+  FHTIC -bench QUICK.BNC [demo] [-advanced]
+
+  QUICK.BNC   high, low and potato detail
+  NORMAL.BNC  each detail with textured, flat and flat lit floors
+  SIZES.BNC   each detail at screen sizes 10 and 11
+  CPU.BNC     the same settings with each CPU's drawers
+
+-advanced also shows the 1% and 0.1% low frame rates. The table is saved
+to FHBENCH.TXT and every run is added to FHBENCH.CSV with the program's
+name, so BENCH.BAT (which runs a .BNC file with every FHTIC and FHM
+program in the folder) gives one CSV comparing all the video modes.
+
 Sound
 -----
 
@@ -159,7 +174,8 @@ v0.7  FastDoom's sound library with all its cards (above), and the
       FHSETUP.EXE setup program. Drawers tuned per CPU like FastDoom
       (LEA, loop, Pentium and MMX versions; 2-pixel Mode Y spans for
       386-class chips), with the CPU found at startup or picked in the
-      menu.
+      menu. Benchmark mode: -bench with FastDoom's .BNC files, -advanced
+      for 1% and 0.1% lows, BENCH.BAT for every program at once.
 
 v0.6  Uncapped frame rate with smooth movement (-uncapped, or the menu).
       Mode X 320x240 (FHTICX). High resolution VESA builds from 320x240

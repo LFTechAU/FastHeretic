@@ -1781,6 +1781,11 @@ boolean G_CheckDemoStatus (void)
 {
 	int             endtime;
 
+	if (timingdemo && fh_bench)
+	{ // FastHeretic -bench: record this run and set up the next
+		FH_BenchEnd();
+		return true;
+	}
 	if (timingdemo)
 	{
 		endtime = I_GetTime ();
