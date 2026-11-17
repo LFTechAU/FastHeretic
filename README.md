@@ -120,6 +120,10 @@ Settings are saved to HERETIC.CFG (the original HERETIC.EXE ignores them).
 Changes
 -------
 
+v0.6  Uncapped frame rate with smooth movement (-uncapped, or the menu).
+      Mode X 320x240 (FHTICX). High resolution VESA builds from 320x240
+      to 1600x1200 (FHM...D/R). Colour MDA (FHTICCDA) and VT100 serial
+      terminal (FHTICVT) text modes.
 v0.5  VESA 320x200 builds: FHTICVBD (direct, 3 pages) and FHTICVBR
       (copied). Both fall back to Mode 13h when there is no VESA mode.
       FastDoom options -debugCard2/-debugCard4, -limitram, -freeram, -xt.
