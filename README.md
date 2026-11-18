@@ -171,6 +171,9 @@ Settings are saved to HERETIC.CFG (the original HERETIC.EXE ignores them).
 Changes
 -------
 
+v0.7.4 Text startup (-textstartup or FHSETUP) shows Doom's progress dots
+      on the R_Init line.
+
 v0.7.3 Sound effects at shifted pitches (nearly all of them) were mixed
       with an unset rate: sounds stalled, repeated, clicked or came in
       late, and the game could freeze or crash with a divide by zero.

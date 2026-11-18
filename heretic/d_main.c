@@ -744,7 +744,8 @@ void hprintf(char *string, unsigned char a)
 	if(debugmode || fh_textstartup) // FastHeretic: plain text startup
 #endif
 	{
-		puts(string);
+		if (!fh_textstartup)
+			puts(string);
 		return;
 	}
 #endif // APPVER_HERETICREV >= AV_HR_TIC10S
@@ -877,17 +878,41 @@ void blitStartup(void)
 }
 #endif
 
+static int fh_dots, fh_dotsshown;	// Doom-style progress dots
+
 char tmsg[300];
 void tprintf(char *msg,int initflag)
 {
 	if (fh_textstartup)
 	{ // FastHeretic: Doom-style startup, one line per step
-		while (*msg == '\n')
+		while (*msg == '\n' || *msg == ' ')
 			msg++;
 		if (!*msg || strchr(msg, '%'))
 			return;	// a few callers pass printf formats the screen never showed
+		if (!strncmp(msg, "R_Init", 6) && msg[6] != ':')
+			return;	// R_InitData etc.: shown as dots instead, like Doom
+		if (fh_dots)
+		{
+			printf("]\n");
+			fh_dots = 0;
+		}
+		if (!strncmp(msg, "R_Init:", 7))
+		{ // "R_Init: Init Heretic refresh daemon - [......]"
+			char line[80];
+			int n = strlen(msg);
+			if (n > 70)
+				n = 70;
+			memcpy(line, msg, n);
+			line[n] = 0;
+			if (n && line[n-1] == '.')
+				line[n-1] = 0;
+			printf("%s - [", line);
+			fh_dots = 1;
+			fh_dotsshown = 0;
+			return;
+		}
 		printf("%s", msg);
-		if (msg[0] && msg[strlen(msg)-1] != '\n')
+		if (msg[strlen(msg)-1] != '\n')
 			printf("\n");
 		return;
 	}
@@ -950,6 +975,15 @@ void IncThermo(void)
 	extern int lastpress;
 #endif
 	thermCurrent++;
+	if (fh_textstartup && fh_dots && thermMax)
+	{ // about 40 dots across the whole load
+		int want = 40 * thermCurrent / thermMax;
+		while (fh_dotsshown < want)
+		{
+			putchar('.');
+			fh_dotsshown++;
+		}
+	}
 	DrawThermo();
 #if (APPVER_HERETICREV >= AV_HR_TIC12)
 	CheckAbortStartup();

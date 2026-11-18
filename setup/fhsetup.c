@@ -29,7 +29,7 @@
 #else
 #define CFGNAME "HERETIC.CFG"
 #define GAMENAME "FastHeretic"
-#define VERSION "0.7.3"
+#define VERSION "0.7.4"
 #define X(n) (n)
 #endif
 
