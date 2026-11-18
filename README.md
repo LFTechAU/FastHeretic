@@ -171,6 +171,13 @@ Settings are saved to HERETIC.CFG (the original HERETIC.EXE ignores them).
 Changes
 -------
 
+v0.7.2 Music played at a fraction of the menu volume at the start of
+      every song; fixed, and the volume follows the original game's
+      curve. Closing the FASTHERETIC menu left its last lines over the
+      status bar; fixed. New Text startup option (FHSETUP, or
+      -textstartup) shows Doom-style startup lines instead of Raven's
+      loading screen.
+
 v0.7.1 Fixed the Mode 13h and VESA (VBR) programs at low and potato
       detail with a view smaller than full screen: only the left half or
       quarter of the view reached the screen. Added FHT13H4.EXE (Mode

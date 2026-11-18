@@ -188,16 +188,33 @@ void MUS_ResumeSong(int handle)
 		MUSIC_Continue();
 }
 
+static int mus_master = 127;	// MUS_SetMasterVolume, 0-127
+
+// The OPL driver's volume falls off much faster than DMX's, so take the
+// square root: 0-127 -> 0-255, menu 10 of 15 plays about as loud as the
+// original game
+static int MusicLevel(int v)
+{
+	int r = 0;
+	v *= 512;
+	while ((r + 1) * (r + 1) <= v)
+		r++;
+	return r > 255 ? 255 : r;
+}
+
 void MUS_SetMasterVolume(int volume)
 {
 	if (volume > 127)
 		volume = 127;
+	if (volume < 0)
+		volume = 0;
+	mus_master = volume;
 	if (fhs_mdev == snd_CD)
 		CD_SetVolume(volume * 2);
 	else if (fhs_mdev == snd_WAV)
 		wavvolume = volume;
 	else
-		MUSIC_SetVolume(volume * 2);
+		MUSIC_SetVolume(MusicLevel(volume));
 }
 
 int MUS_RegisterSong(void *data)
@@ -297,7 +314,9 @@ int MUS_PlaySong(int handle, int volume)
 	if (mus_data == NULL)
 		return 0;
 	MUSIC_PlaySong((unsigned char *)mus_data, mus_loop);
-	MUSIC_SetVolume(volume * 2);
+	// The game passes its 0-15 menu setting here; the real level is the
+	// master volume (DMX scales songs by it), so don't drop to volume*2
+	MUSIC_SetVolume(MusicLevel(mus_master));
 	return 0;
 }
 

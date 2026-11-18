@@ -27,6 +27,7 @@ void FH_InterpolateEnd(void);
 void FH_SetUncapped(int on);
 void FH_TryRunTicsUncapped(void);
 extern int fh_near;          // only draw nearby non-monster sprites
+extern int fh_textstartup;   // plain text startup instead of Raven's screen
 extern int fh_vsync;         // wait for vertical retrace before blits
 extern int fh_csv;           // append timedemo results to FHBENCH.CSV
 extern int fh_fixdac;

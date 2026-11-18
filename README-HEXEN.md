@@ -88,6 +88,11 @@ Settings are saved to HEXEN.CFG (the original HEXEN.EXE ignores them).
 Changes
 -------
 
+v0.1.2 Music played at a fraction of the menu volume at the start of
+      every song; fixed. Closing the FASTHEXEN menu could leave text over
+      the status bar; fixed. Text startup can now be set in FHXSETUP as
+      well as with -textstartup.
+
 v0.1.1 Fixed the Mode 13h and VESA (VBR) programs at low and potato
       detail with a view smaller than full screen: only part of the view
       reached the screen. Added FHX13H4.EXE (Mode 13h for 486).

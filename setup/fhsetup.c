@@ -23,13 +23,13 @@
 // FHXSETUP.EXE: the same for FastHexen and HEXEN.CFG
 #define CFGNAME "HEXEN.CFG"
 #define GAMENAME "FastHexen"
-#define VERSION "0.1"
+#define VERSION "0.1.2"
 // Hexen has its CD music card at 10, so FastDoom's extra cards are one up
 #define X(n) ((n) >= 10 ? (n) + 1 : (n))
 #else
 #define CFGNAME "HERETIC.CFG"
 #define GAMENAME "FastHeretic"
-#define VERSION "0.7"
+#define VERSION "0.7.2"
 #define X(n) (n)
 #endif
 
@@ -350,6 +350,8 @@ static item_t items[] = {
 		"Frames per second in the corner of the screen."},
 	{"Wait for retrace", "fh_vsync", 0, onoff, N(onoff),
 		"Stops tearing, but caps the frame rate to the monitor."},
+	{"Text startup", "fh_textstartup", 0, onoff, N(onoff),
+		"Doom-style scrolling text at startup instead of Raven's loading screen."},
 	{"Detail", "fh_detail", 0, detail, N(detail),
 		"Low halves the columns, Potato quarters them. Also in the game's menu."},
 };

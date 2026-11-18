@@ -1782,6 +1782,10 @@ void MN_DeactivateMenu(void)
 {
 	CurrentMenu->oldItPos = CurrentItPos;
 	MenuActive = false;
+	// FastHeretic: the FASTHERETIC page reaches into the status bar, so
+	// redraw it (and the border) or the menu text stays there
+	SB_state = -1;
+	BorderNeedRefresh = true;
 	if(!netgame)
 	{
 		paused = false;

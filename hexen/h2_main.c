@@ -326,6 +326,14 @@ void H2_Main(void)
 	// Load defaults before initing other systems
 	ST_Message("M_LoadDefaults: Load system defaults.\n");
 	M_LoadDefaults(CONFIG_FILE_NAME);
+	{
+		extern int fh_textstartup;
+#ifdef FH_BACKBUF
+		fh_textstartup = 1;	// these cards can't show the 640x480 picture
+#endif
+		if (M_ParmExists("-textstartup"))
+			fh_textstartup = 1;
+	}
 	FH_Options();
 
 	// Now that the savedir is loaded from .CFG, make sure it exists

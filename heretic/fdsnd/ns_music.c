@@ -386,17 +386,11 @@ int MUSIC_InitFM(int card, midifuncs *Funcs, int Address)
     switch (card)
     {
     case SoundBlaster:
-        if (BLASTER_CardHasMixer())
-        {
-            BLASTER_SaveMidiVolume();
-            Funcs->SetVolume = BLASTER_SetMidiVolume;
-            Funcs->GetVolume = BLASTER_GetMidiVolume;
-        }
-        else
-        {
-            Funcs->SetVolume = NULL;
-            Funcs->GetVolume = NULL;
-        }
+        // FastHeretic: scale the notes like DMX does instead of turning
+        // the card's FM mixer down (its dB steps made the music far
+        // quieter than the original game at the same menu setting)
+        Funcs->SetVolume = NULL;
+        Funcs->GetVolume = NULL;
         break;
 
     case Adlib:

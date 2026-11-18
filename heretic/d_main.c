@@ -34,6 +34,7 @@ boolean ExtendedWAD = false;	// true if episodes 4 and 5 present
 boolean nomonsters;			// checkparm of -nomonsters
 boolean respawnparm;			// checkparm of -respawn
 boolean debugmode;			// checkparm of -debug
+int fh_textstartup;			// FastHeretic: Doom-style text startup
 boolean ravpic;				// checkparm of -ravpic
 #if (APPVER_HERETICREV < AV_HR_TIC10S)
 boolean altpal;				// checkparm to use an alternate palette routine
@@ -638,7 +639,7 @@ void wadprintf(void)
 #if (APPVER_HERETICREV < AV_HR_TIC12)
 	if(M_CheckParm("-debug"))
 #else
-	if(debugmode)
+	if(debugmode || fh_textstartup) // FastHeretic: plain text startup
 #endif
 	{
 		return;
@@ -740,7 +741,7 @@ void hprintf(char *string, unsigned char a)
 #if (APPVER_HERETICREV < AV_HR_TIC12)
 	if(M_CheckParm("-debug"))
 #else
-	if(debugmode)
+	if(debugmode || fh_textstartup) // FastHeretic: plain text startup
 #endif
 	{
 		puts(string);
@@ -759,7 +760,7 @@ void drawstatus(void)
 #if (APPVER_HERETICREV < AV_HR_TIC12)
 	if(M_CheckParm("-debug"))
 #else
-	if(debugmode)
+	if(debugmode || fh_textstartup) // FastHeretic: plain text startup
 #endif
 	{
 		return;
@@ -789,7 +790,7 @@ void DrawThermo(void)
 #if (APPVER_HERETICREV < AV_HR_TIC12)
 	if(M_CheckParm("-debug"))
 #else
-	if(debugmode)
+	if(debugmode || fh_textstartup) // FastHeretic: plain text startup
 #endif
 	{
 		return;
@@ -853,7 +854,7 @@ void blitStartup(void)
 #if (APPVER_HERETICREV < AV_HR_TIC12)
 	if(M_CheckParm("-debug"))
 #else
-	if(debugmode)
+	if(debugmode || fh_textstartup) // FastHeretic: plain text startup
 #endif
 	{
 		return;
@@ -879,6 +880,17 @@ void blitStartup(void)
 char tmsg[300];
 void tprintf(char *msg,int initflag)
 {
+	if (fh_textstartup)
+	{ // FastHeretic: Doom-style startup, one line per step
+		while (*msg == '\n')
+			msg++;
+		if (!*msg || strchr(msg, '%'))
+			return;	// a few callers pass printf formats the screen never showed
+		printf("%s", msg);
+		if (msg[0] && msg[strlen(msg)-1] != '\n')
+			printf("\n");
+		return;
+	}
 #if 0
 	#ifdef __WATCOMC__
 	char    temp[80];
@@ -1149,6 +1161,8 @@ void D_DoomMain(void)
 	// Load defaults before initing other systems
 	printf("M_LoadDefaults: Load system defaults.\n");
 	M_LoadDefaults();
+	if (M_CheckParm("-textstartup"))
+		fh_textstartup = 1;
 
 	// FastHeretic command line options (override HERETIC.CFG)
 	if (M_CheckParm("-high")) fh_detail = 0;

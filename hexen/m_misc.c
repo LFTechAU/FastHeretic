@@ -619,6 +619,7 @@ default_t defaults[] =
 	{ "fh_cpu", &fh_cpu, -1 },
 	{ "fh_near", &fh_near, 0 },
 	{ "fh_vsync", &fh_vsync, 0 },
+	{ "fh_textstartup", &fh_textstartup, 0 },
 
 #ifndef __NeXT__
 	{ "snd_channels", &snd_Channels, 3 },
