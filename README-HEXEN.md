@@ -88,6 +88,11 @@ Settings are saved to HEXEN.CFG (the original HEXEN.EXE ignores them).
 Changes
 -------
 
+v0.1.3 Sound effects at shifted pitches (nearly all of them) were mixed
+      with an unset rate: sounds stalled, repeated, clicked or came in
+      late, and the game could freeze or crash with a divide by zero.
+      Fixed.
+
 v0.1.2 Music played at a fraction of the menu volume at the start of
       every song; fixed. Closing the FASTHEXEN menu could leave text over
       the status bar; fixed. Text startup can now be set in FHXSETUP as

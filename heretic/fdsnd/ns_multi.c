@@ -514,6 +514,18 @@ void MV_SetVoicePitch(VoiceNode *voice, unsigned long rate)
     case 44100:
         voice->RateScale = RateScale44100;
         voice->FixedPointBufferSize = FixedPointBufferSize44100;
+        break;
+    default:
+        // FastHeretic: Heretic and Hexen shift each sound's pitch a little,
+        // so any rate can come here. FastDoom only had the three above,
+        // which left RateScale stale or 0 (wrong pitch, clicks, and a
+        // divide by zero in MV_Mix).
+        if (rate < 1000)
+            rate = 1000;
+        voice->RateScale = (rate << 16) / (unsigned long)MV_MixRate;
+        voice->FixedPointBufferSize = (voice->RateScale * MixBufferSize) -
+            voice->RateScale;
+        break;
     }
 }
 

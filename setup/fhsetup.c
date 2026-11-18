@@ -23,13 +23,13 @@
 // FHXSETUP.EXE: the same for FastHexen and HEXEN.CFG
 #define CFGNAME "HEXEN.CFG"
 #define GAMENAME "FastHexen"
-#define VERSION "0.1.2"
+#define VERSION "0.1.3"
 // Hexen has its CD music card at 10, so FastDoom's extra cards are one up
 #define X(n) ((n) >= 10 ? (n) + 1 : (n))
 #else
 #define CFGNAME "HERETIC.CFG"
 #define GAMENAME "FastHeretic"
-#define VERSION "0.7.2"
+#define VERSION "0.7.3"
 #define X(n) (n)
 #endif
 

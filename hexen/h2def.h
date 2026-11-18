@@ -19,7 +19,7 @@
 
 #define FH_HEXEN
 #define FH_NAME "FastHexen"
-#define FH_VERSION "0.1.2"
+#define FH_VERSION "0.1.3"
 #define FH_BANNER "FastHexen v" FH_VERSION " by LFTech - based on Hexen v1.0\n"
 
 #include <stdio.h>
